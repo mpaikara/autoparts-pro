@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoParts Pro — Live</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#070b12;--s1:#0c1220;--s2:#111928;--s3:#182033;--s4:#1e2a42;--border:#1e2d47;--border2:#2c3f60;--gold:#f59e0b;--gold2:#fbbf24;--gold3:#fcd34d;--green:#059669;--green2:#10b981;--green3:#34d399;--blue:#2563eb;--blue2:#3b82f6;--blue3:#60a5fa;--red:#dc2626;--red2:#ef4444;--red3:#f87171;--purple:#7c3aed;--purple2:#8b5cf6;--cyan:#0891b2;--cyan2:#06b6d4;--orange:#ea580c;--orange2:#f97316;--text:#f8fafc;--text2:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;--muted3:#cbd5e1;}
@@ -438,15 +439,20 @@ code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--s3);
       </div>
 
       <div class="card">
-        <div class="card-hd"><div class="card-title">📂 Apna Excel/CSV Upload Karo</div></div>
+        <div class="card-hd"><div class="card-title">📂 Kisi Bhi Vendor Ka Excel Import Karo</div><span class="badge b-blue">Universal Import</span></div>
         <div class="card-body">
-          <div style="border:2px dashed var(--border2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;background:var(--s2)" onclick="document.getElementById('excel-upload').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleExcelDrop(event)">
-            <input type="file" id="excel-upload" style="display:none" accept=".xlsx,.xls,.csv" onchange="handleExcelFile(this.files[0])">
-            <div style="font-size:32px;margin-bottom:8px">📂</div>
-            <div style="font-weight:700;font-size:15px;margin-bottom:4px">Excel ya CSV Drop Karo</div>
-            <div style="font-size:12px;color:var(--muted2)">Columns: Part Number, Price — auto-detect hoga</div>
+          <div class="alert alert-blue" style="margin-bottom:14px">
+            <div class="alert-icon">💡</div>
+            <div><div class="alert-title">Kaise kaam karta hai?</div>
+            <div class="alert-text">Koi bhi vendor ka Excel (.xlsx) upload karo → columns map karo (Part No, Price, Description) → Vendor naam likho → Import!</div></div>
           </div>
-          <div id="excel-preview" style="display:none;margin-top:14px"></div>
+          <div id="excel-dropzone" style="border:2px dashed var(--border2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;background:var(--s2);transition:all .2s" onclick="document.getElementById('excel-upload').click()" ondragover="event.preventDefault();document.getElementById('excel-dropzone').style.borderColor='var(--gold)'" ondragleave="document.getElementById('excel-dropzone').style.borderColor='var(--border2)'" ondrop="handleExcelDrop(event)">
+            <input type="file" id="excel-upload" style="display:none" accept=".xlsx,.csv" onchange="handleExcelFile(this.files[0])">
+            <div style="font-size:36px;margin-bottom:8px">📂</div>
+            <div style="font-weight:700;font-size:15px;margin-bottom:4px">Excel (.xlsx) ya CSV Drop Karo</div>
+            <div style="font-size:12px;color:var(--muted2)">Nissan, Toyota, Honda — koi bhi vendor</div>
+          </div>
+          <div id="excel-preview" style="display:none;margin-top:16px"></div>
         </div>
       </div>
     </div>
@@ -1436,14 +1442,208 @@ async function importSchaeffler() {
   toast(`✓ ${done} Schaeffler parts imported!`);
 }
 
-// Excel upload handler
+// ═══════════════════════════════════════
+// EXCEL UPLOAD — UNIVERSAL VENDOR IMPORT
+// ═══════════════════════════════════════
 function handleExcelDrop(e) {
   e.preventDefault();
+  document.getElementById('excel-dropzone').style.borderColor = 'var(--border2)';
   if (e.dataTransfer.files[0]) handleExcelFile(e.dataTransfer.files[0]);
 }
+
+let excelRows = [], excelHeaders = [];
+
 function handleExcelFile(file) {
   if (!file) return;
-  toast(`"${file.name}" — feature coming soon. Abhi Schaeffler import use karo.`, 'info');
+  toast(`"${file.name}" reading...`, 'info');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let rows = [];
+      if (file.name.endsWith('.csv')) {
+        // CSV parse
+        const text = new TextDecoder().decode(e.target.result);
+        const lines = text.split('\n').filter(l => l.trim());
+        rows = lines.map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
+      } else {
+        // XLSX parse using SheetJS
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      }
+      if (!rows.length) { toast('File empty hai', 'error'); return; }
+
+      excelHeaders = rows[0].map(h => String(h).trim());
+      excelRows = rows.slice(1).filter(r => r.some(c => c !== '' && c !== null && c !== undefined));
+
+      showExcelMapper(file.name);
+    } catch(err) {
+      toast('File read error: ' + err.message, 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showExcelMapper(filename) {
+  const preview = document.getElementById('excel-preview');
+  preview.style.display = 'block';
+
+  // Try to auto-detect columns
+  const autoPartNo = excelHeaders.findIndex(h => /part.?no|part.?num|part.?number|partno|item.?no/i.test(h));
+  const autoDesc = excelHeaders.findIndex(h => /desc|name|item|product/i.test(h));
+  const autoPrice = excelHeaders.findIndex(h => /price|rate|cost|net|amount/i.test(h));
+
+  const opts = excelHeaders.map((h, i) => `<option value="${i}" ${''} >${i+1}. ${h || '(empty)'}</option>`).join('');
+  const noneOpt = `<option value="-1">— Skip —</option>`;
+
+  preview.innerHTML = `
+    <div class="card" style="margin:0">
+      <div class="card-hd">
+        <div class="card-title">📊 "${filename}" — ${excelRows.length.toLocaleString()} rows mili</div>
+        <span class="badge b-green">File Ready</span>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom:14px">
+          <div class="label-txt mb2" style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700;display:block;margin-bottom:8px">Columns Map Karo</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+            <div class="fg"><label>Part Number *</label>
+              <select class="inp" id="map-partno">${noneOpt}${opts}</select></div>
+            <div class="fg"><label>Description</label>
+              <select class="inp" id="map-desc">${noneOpt}${opts}</select></div>
+            <div class="fg"><label>Price *</label>
+              <select class="inp" id="map-price">${noneOpt}${opts}</select></div>
+            <div class="fg"><label>Currency</label>
+              <select class="inp" id="map-curr"><option value="INR">INR ₹</option><option value="USD">USD $</option><option value="AED">AED</option></select></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div class="fg"><label>Vendor Name *</label><input class="inp" id="map-vendor" placeholder="e.g. Nissan India" value="Nissan India"></div>
+          <div class="fg"><label>Default Margin %</label><input class="inp" type="number" id="map-margin" value="20"></div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px">
+          <div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Preview (first 5 rows)</div>
+          <div style="overflow-x:auto"><table style="min-width:100%">
+            <thead><tr>${excelHeaders.map(h=>`<th>${h||'—'}</th>`).join('')}</tr></thead>
+            <tbody>${excelRows.slice(0,5).map(r=>`<tr>${excelHeaders.map((_,i)=>`<td style="font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis">${r[i]||''}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table></div>
+        </div>
+        <div id="xl-import-progress" style="display:none;margin-bottom:12px">
+          <div class="flex jb" style="margin-bottom:4px;font-size:12px"><span id="xl-imp-label">Importing...</span><span class="mono text-gold" id="xl-imp-pct">0%</span></div>
+          <div class="progress-wrap"><div class="progress-fill" id="xl-imp-fill" style="width:0%;background:linear-gradient(90deg,var(--blue),var(--blue2))"></div></div>
+          <div class="import-log" id="xl-imp-log" style="max-height:120px"></div>
+        </div>
+        <div id="xl-import-done" style="display:none"></div>
+        <button class="btn btn-primary w-full" style="justify-content:center;padding:11px" id="btn-xl-import" onclick="startExcelImport()">
+          ⚡ Import Karo
+        </button>
+      </div>
+    </div>`;
+
+  // Auto-select detected columns
+  if (autoPartNo >= 0) document.getElementById('map-partno').value = autoPartNo;
+  if (autoDesc >= 0) document.getElementById('map-desc').value = autoDesc;
+  if (autoPrice >= 0) document.getElementById('map-price').value = autoPrice;
+}
+
+function addXLLog(msg, type = 'info') {
+  const box = document.getElementById('xl-imp-log');
+  if (!box) return;
+  const div = document.createElement('div');
+  div.className = 'log-' + type;
+  div.textContent = new Date().toLocaleTimeString() + ' › ' + msg;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function startExcelImport() {
+  const partNoCol = parseInt(document.getElementById('map-partno').value);
+  const priceCol = parseInt(document.getElementById('map-price').value);
+  const descCol = parseInt(document.getElementById('map-desc').value);
+  const currency = document.getElementById('map-curr').value;
+  const vendorName = document.getElementById('map-vendor').value.trim();
+  const margin = parseInt(document.getElementById('map-margin').value) || 20;
+
+  if (partNoCol < 0) { toast('Part Number column select karo', 'error'); return; }
+  if (priceCol < 0) { toast('Price column select karo', 'error'); return; }
+  if (!vendorName) { toast('Vendor naam likho', 'error'); return; }
+
+  // Parse valid rows
+  const validParts = [];
+  for (const row of excelRows) {
+    const no = String(row[partNoCol] || '').trim();
+    const price = parseFloat(String(row[priceCol] || '').replace(/[,₹$]/g, ''));
+    const desc = descCol >= 0 ? String(row[descCol] || '').trim() : '';
+    if (no && !isNaN(price) && price > 0) {
+      validParts.push({ no, desc: desc || (vendorName + ' Part'), price: Math.round(price * 100) / 100 });
+    }
+  }
+
+  if (!validParts.length) { toast('Koi valid parts nahi mile', 'error'); return; }
+
+  const btn = document.getElementById('btn-xl-import');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Importing...';
+  document.getElementById('xl-import-progress').style.display = 'block';
+
+  // First add vendor
+  try {
+    await sbPost('vendors', {
+      id: 'vendor-' + vendorName.toLowerCase().replace(/[^a-z0-9]/g,'-'),
+      name: vendorName, location: 'India', type: 'upload',
+      lead_days: 7, status: 'active', parts_count: validParts.length
+    }, true);
+  } catch(e) { console.log('Vendor upsert:', e.message); }
+
+  const BATCH = 50;
+  const total = validParts.length;
+  let done = 0, errors = 0;
+  addXLLog(`Import shuru — ${total} parts, Vendor: ${vendorName}`, 'info');
+
+  for (let i = 0; i < total; i += BATCH) {
+    const batch = validParts.slice(i, i + BATCH);
+    const safeVendor = vendorName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const partRows = batch.map(p => ({
+      id: `${safeVendor}-${p.no.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`,
+      no: p.no, desc_: p.desc, cat: 'General', margin, unit: 'PCS', active: true
+    }));
+    const priceRows = batch.map(p => ({
+      id: `vp-${safeVendor}-${p.no.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`,
+      part_id: `${safeVendor}-${p.no.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`,
+      part_no: p.no, vendor_name: vendorName,
+      price: p.price, currency, lead_days: 7
+    }));
+    try {
+      await sbPost('parts', partRows, true);
+      await sbPost('vendor_prices', priceRows, true);
+      done += batch.length;
+    } catch(e) {
+      errors++;
+      addXLLog(`Batch error: ${e.message.slice(0,60)}`, 'err');
+    }
+    const pct = Math.round(done / total * 100);
+    document.getElementById('xl-imp-fill').style.width = pct + '%';
+    document.getElementById('xl-imp-pct').textContent = pct + '%';
+    document.getElementById('xl-imp-label').textContent = `${done.toLocaleString()}/${total.toLocaleString()} parts...`;
+    if (done % 5000 === 0 || done === total) addXLLog(`✓ ${done.toLocaleString()} parts done`, 'ok');
+    await new Promise(r => setTimeout(r, 20));
+  }
+
+  addXLLog(`🎉 Done! ${done} parts, ${errors} errors`, errors > 0 ? 'warn' : 'ok');
+  document.getElementById('xl-imp-label').textContent = 'Complete!';
+  document.getElementById('xl-import-done').style.display = 'block';
+  document.getElementById('xl-import-done').innerHTML = `
+    <div class="alert alert-green">
+      <div class="alert-icon">🎉</div>
+      <div><div class="alert-title">${done.toLocaleString()} Parts Import Ho Gaye!</div>
+      <div class="alert-text">Parts Catalog mein jaao — ${vendorName} ke parts search mein milenge.</div></div>
+    </div>`;
+  btn.textContent = '✓ Import Complete';
+  btn.className = 'btn btn-success w-full';
+  await loadAllData();
+  toast(`✓ ${done.toLocaleString()} ${vendorName} parts imported!`);
 }
 
 // ═══════════════════════════════════════
