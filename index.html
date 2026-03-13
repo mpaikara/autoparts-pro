@@ -868,15 +868,29 @@ async function checkConnection() {
 // ═══════════════════════════════════════
 async function loadAllData() {
   try {
-    const [parts, clients, vendors, quotes, settings] = await Promise.all([
-      sbGet('parts', 'select=*,vendor_prices(*)&order=no&limit=3000'),
+    // Parts alag se load honge jab Parts Catalog page open hoga
+    // Startup pe sirf clients, vendors, quotes, settings load karo — fast!
+    const [clients, vendors, quotes, settings] = await Promise.all([
       sbGet('clients', 'order=company'),
       sbGet('vendors', 'order=name'),
       sbGet('quotations', 'order=created_at.desc&limit=200'),
       sbGet('app_settings', 'key=eq.main')
     ]);
-    allParts = parts || [];
+    allParts = [];
     allClients = clients || [];
+    allVendors = vendors || [];
+    allQuotes = quotes || [];
+    if (settings && settings[0]) {
+      try { Object.assign(appSettings, settings[0].value); } catch {}
+    }
+    quoteCounter = allQuotes.length + 1;
+    document.getElementById('company-name-disp').textContent = appSettings.companyName;
+    populateClientDropdown();
+  } catch (e) {
+    console.error('Load error:', e);
+    toast('Data load error: ' + e.message, 'error');
+  }
+}
     allVendors = vendors || [];
     allQuotes = quotes || [];
     if (settings && settings[0]) {
@@ -896,11 +910,16 @@ async function loadAllData() {
 // ═══════════════════════════════════════
 async function renderDashboard() {
   try {
-    const [partsCount, quotesCount, clientsCount] = await Promise.all([
-      sbCount('parts'), sbCount('quotations'), sbCount('clients')
+    // Fast parallel count queries — no joins, no timeouts
+    const [partsCount, quotesCount, clientsCount, vendorsCount] = await Promise.all([
+      sbCount('parts'),
+      sbCount('quotations'),
+      sbCount('clients'),
+      sbCount('vendors')
     ]);
-    const won = allQuotes.filter(q => q.status === 'Won');
-    const sent = allQuotes.filter(q => q.status === 'Sent');
+
+    const won   = allQuotes.filter(q => q.status === 'Won');
+    const sent  = allQuotes.filter(q => q.status === 'Sent');
     const totalRev = won.reduce((s, q) => s + calcQuoteGrand(q), 0);
 
     document.getElementById('dash-stats').innerHTML = `
@@ -909,6 +928,7 @@ async function renderDashboard() {
       <div class="stat-card sc-blue"><div class="stat-label">Won Orders</div><div class="stat-val text-green">${won.length}</div><div class="stat-sub">Revenue: ${fmtMoney(totalRev)}</div></div>
       <div class="stat-card sc-purple"><div class="stat-label">Clients</div><div class="stat-val" style="color:#c4b5fd">${clientsCount}</div><div class="stat-sub">Active buyers</div></div>`;
 
+    // Recent quotes
     document.getElementById('dash-quotes-tbody').innerHTML = allQuotes.slice(0, 5).map(q => `
       <tr>
         <td class="mono text-gold">${q.no}</td>
@@ -918,19 +938,18 @@ async function renderDashboard() {
         <td><button class="btn btn-ghost btn-xs" onclick="previewQuotePDF('${q.id}')">PDF</button></td>
       </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted2)">No quotes yet</td></tr>';
 
-    // Parts summary by category
-    const cats = {};
-    allParts.forEach(p => { cats[p.cat] = (cats[p.cat] || 0) + 1; });
-    const topCats = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 6);
-    document.getElementById('dash-parts-summary').innerHTML = topCats.map(([cat, count]) => `
+    // Parts by vendor (fast — just vendor table)
+    document.getElementById('dash-parts-summary').innerHTML = allVendors.map(v => `
       <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(30,45,71,.4);font-size:12px">
-        <span>${cat}</span><span class="badge b-blue">${count}</span>
-      </div>`).join('') + `<div style="padding:8px 0;font-size:11px;color:var(--muted2)">${partsCount} total parts in database</div>`;
+        <span>${v.name}</span><span class="badge b-blue">${(v.parts_count||0).toLocaleString()}</span>
+      </div>`).join('') + `<div style="padding:8px 0;font-size:11px;color:var(--muted2)">${partsCount.toLocaleString()} total parts in database</div>`;
 
-    // Nav badges
+    // Nav badge
     const nbs = document.getElementById('nb-quotes');
-    if (sent.length > 0) { nbs.style.display = ''; nbs.textContent = sent.length; } else { nbs.style.display = 'none'; }
-  } catch (e) { console.error(e); }
+    if (sent.length > 0) { nbs.style.display = ''; nbs.textContent = sent.length; }
+    else { nbs.style.display = 'none'; }
+
+  } catch (e) { console.error('Dashboard error:', e); }
 }
 
 // ═══════════════════════════════════════
