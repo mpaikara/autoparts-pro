@@ -1560,52 +1560,92 @@ function addXLLog(msg, type = 'info') {
 
 async function startExcelImport() {
   const partNoCol = parseInt(document.getElementById('map-partno').value);
-  const priceCol = parseInt(document.getElementById('map-price').value);
-  const descCol = parseInt(document.getElementById('map-desc').value);
-  const currency = document.getElementById('map-curr').value;
+  const priceCol  = parseInt(document.getElementById('map-price').value);
+  const descCol   = parseInt(document.getElementById('map-desc').value);
+  const currency  = document.getElementById('map-curr').value;
   const vendorName = document.getElementById('map-vendor').value.trim();
-  const margin = parseInt(document.getElementById('map-margin').value) || 20;
+  const margin    = parseInt(document.getElementById('map-margin').value) || 20;
+  const isUpdate  = document.getElementById('import-mode')?.value === 'update';
 
   if (partNoCol < 0) { toast('Part Number column select karo', 'error'); return; }
-  if (priceCol < 0) { toast('Price column select karo', 'error'); return; }
-  if (!vendorName) { toast('Vendor naam likho', 'error'); return; }
+  if (priceCol  < 0) { toast('Price column select karo', 'error'); return; }
+  if (!vendorName)   { toast('Vendor naam likho', 'error'); return; }
 
   // Parse valid rows
-  const validParts = [];
+  const newData = {};
   for (const row of excelRows) {
-    const no = String(row[partNoCol] || '').trim();
-    const price = parseFloat(String(row[priceCol] || '').replace(/[,₹$]/g, ''));
-    const desc = descCol >= 0 ? String(row[descCol] || '').trim() : '';
+    const no    = String(row[partNoCol] || '').trim();
+    const price = parseFloat(String(row[priceCol] || '').replace(/[,₹$\s]/g, ''));
+    const desc  = descCol >= 0 ? String(row[descCol] || '').trim() : '';
     if (no && !isNaN(price) && price > 0) {
-      validParts.push({ no, desc: desc || (vendorName + ' Part'), price: Math.round(price * 100) / 100 });
+      newData[no] = { no, desc: desc || (vendorName + ' Part'), price: Math.round(price * 100) / 100 };
     }
   }
-
+  const validParts = Object.values(newData);
   if (!validParts.length) { toast('Koi valid parts nahi mile', 'error'); return; }
 
   const btn = document.getElementById('btn-xl-import');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Importing...';
+  btn.innerHTML = '<span class="spinner"></span> Processing...';
   document.getElementById('xl-import-progress').style.display = 'block';
 
-  // First add vendor
+  const safeVendor = vendorName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+  // ── STEP 1: Fetch existing prices for this vendor (for change detection) ──
+  addXLLog(`Existing prices check kar raha hoon...`, 'info');
+  let oldPrices = {}; // part_no → old price
+  try {
+    let offset = 0;
+    while (true) {
+      const chunk = await sbGet('vendor_prices',
+        `vendor_name=eq.${encodeURIComponent(vendorName)}&select=part_no,price&limit=1000&offset=${offset}`);
+      if (!chunk.length) break;
+      chunk.forEach(r => { oldPrices[r.part_no] = parseFloat(r.price); });
+      offset += 1000;
+      if (chunk.length < 1000) break;
+    }
+    addXLLog(`${Object.keys(oldPrices).length} existing prices mili`, 'info');
+  } catch(e) {
+    addXLLog('Existing prices fetch failed (fresh import karunga)', 'warn');
+  }
+
+  // ── STEP 2: Detect changes ──
+  const priceChanges = [];
+  const newParts = [];
+  for (const p of validParts) {
+    if (oldPrices[p.no] !== undefined) {
+      const oldP = oldPrices[p.no];
+      const diff = ((p.price - oldP) / oldP * 100);
+      if (Math.abs(diff) >= 0.01) {
+        priceChanges.push({ no: p.no, desc: p.desc, oldPrice: oldP, newPrice: p.price, diff });
+      }
+    } else {
+      newParts.push(p.no);
+    }
+  }
+
+  addXLLog(`🔍 ${priceChanges.length} price changes detected, ${newParts.length} naye parts`, 'info');
+
+  // ── STEP 3: Upsert vendor ──
   try {
     await sbPost('vendors', {
-      id: 'vendor-' + vendorName.toLowerCase().replace(/[^a-z0-9]/g,'-'),
+      id: 'vendor-' + safeVendor,
       name: vendorName, location: 'India', type: 'upload',
-      lead_days: 7, status: 'active', parts_count: validParts.length
+      lead_days: 7, status: 'active',
+      parts_count: validParts.length,
+      last_update: new Date().toISOString().slice(0,10)
     }, true);
-  } catch(e) { console.log('Vendor upsert:', e.message); }
+  } catch(e) { console.log('Vendor:', e.message); }
 
+  // ── STEP 4: Import in batches ──
   const BATCH = 50;
   const total = validParts.length;
   let done = 0, errors = 0;
-  addXLLog(`Import shuru — ${total} parts, Vendor: ${vendorName}`, 'info');
+  addXLLog(`Import shuru — ${total.toLocaleString()} parts`, 'info');
 
   for (let i = 0; i < total; i += BATCH) {
     const batch = validParts.slice(i, i + BATCH);
-    const safeVendor = vendorName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const partRows = batch.map(p => ({
+    const partRows  = batch.map(p => ({
       id: `${safeVendor}-${p.no.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`,
       no: p.no, desc_: p.desc, cat: 'General', margin, unit: 'PCS', active: true
     }));
@@ -1613,7 +1653,8 @@ async function startExcelImport() {
       id: `vp-${safeVendor}-${p.no.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`,
       part_id: `${safeVendor}-${p.no.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`,
       part_no: p.no, vendor_name: vendorName,
-      price: p.price, currency, lead_days: 7
+      price: p.price, currency, lead_days: 7,
+      updated_at: new Date().toISOString()
     }));
     try {
       await sbPost('parts', partRows, true);
@@ -1627,23 +1668,81 @@ async function startExcelImport() {
     document.getElementById('xl-imp-fill').style.width = pct + '%';
     document.getElementById('xl-imp-pct').textContent = pct + '%';
     document.getElementById('xl-imp-label').textContent = `${done.toLocaleString()}/${total.toLocaleString()} parts...`;
-    if (done % 5000 === 0 || done === total) addXLLog(`✓ ${done.toLocaleString()} parts done`, 'ok');
+    if (done % 5000 === 0 || done === total) addXLLog(`✓ ${done.toLocaleString()} done`, 'ok');
     await new Promise(r => setTimeout(r, 20));
   }
 
-  addXLLog(`🎉 Done! ${done} parts, ${errors} errors`, errors > 0 ? 'warn' : 'ok');
+  // ── STEP 5: Save price change log to DB ──
+  if (priceChanges.length > 0) {
+    try {
+      const logRows = priceChanges.slice(0, 200).map(c => ({
+        id: genId('PA'),
+        part_no: c.no, desc_: c.desc,
+        vendor: vendorName,
+        old_price: c.oldPrice, new_price: c.newPrice,
+        source: 'upload',
+        created_at: new Date().toISOString()
+      }));
+      await sbPost('price_approvals', logRows, true);
+      addXLLog(`📋 ${priceChanges.length} price changes logged`, 'ok');
+    } catch(e) { console.log('Log save:', e.message); }
+  }
+
+  // ── STEP 6: Show summary ──
+  addXLLog(`🎉 Done! ${done.toLocaleString()} parts, ${errors} errors`, errors > 0 ? 'warn' : 'ok');
   document.getElementById('xl-imp-label').textContent = 'Complete!';
+
+  // Build change summary table
+  const increased = priceChanges.filter(c => c.diff > 0);
+  const decreased = priceChanges.filter(c => c.diff < 0);
+  const topChanges = [...priceChanges].sort((a,b) => Math.abs(b.diff)-Math.abs(a.diff)).slice(0, 8);
+
   document.getElementById('xl-import-done').style.display = 'block';
   document.getElementById('xl-import-done').innerHTML = `
-    <div class="alert alert-green">
+    <div class="alert alert-green" style="margin-bottom:10px">
       <div class="alert-icon">🎉</div>
-      <div><div class="alert-title">${done.toLocaleString()} Parts Import Ho Gaye!</div>
-      <div class="alert-text">Parts Catalog mein jaao — ${vendorName} ke parts search mein milenge.</div></div>
-    </div>`;
-  btn.textContent = '✓ Import Complete';
+      <div><div class="alert-title">${done.toLocaleString()} Parts Updated! ${errors > 0 ? `(${errors} errors)` : ''}</div>
+      <div class="alert-text">${vendorName} · ${new Date().toLocaleDateString('en-IN')}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--gold)">${done.toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">TOTAL UPDATED</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--red3)">${increased.length.toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">PRICE BADHE ↑</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green3)">${decreased.length.toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">PRICE GIRE ↓</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--blue3)">${newParts.length.toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">NAYE PARTS</div>
+      </div>
+    </div>
+    ${topChanges.length > 0 ? `
+    <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Sabse Zyada Badlaav (Top ${topChanges.length})</div>
+      <div style="overflow-x:auto"><table style="width:100%">
+        <thead><tr><th>Part No.</th><th>Description</th><th>Purana</th><th>Naya</th><th>Change</th></tr></thead>
+        <tbody>${topChanges.map(c => `
+          <tr>
+            <td class="mono text-gold" style="font-size:11px">${c.no}</td>
+            <td style="font-size:11px;max-width:160px">${c.desc}</td>
+            <td class="mono text-muted" style="font-size:11px">₹${c.oldPrice.toFixed(2)}</td>
+            <td class="mono" style="font-size:11px;font-weight:700">₹${c.newPrice.toFixed(2)}</td>
+            <td><span class="badge ${c.diff > 0 ? 'b-red' : 'b-green'}">${c.diff > 0 ? '↑' : '↓'} ${Math.abs(c.diff).toFixed(1)}%</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>` : '<div class="alert alert-blue"><div class="alert-icon">ℹ️</div><div class="alert-text">Pehli baar import hai — koi price comparison nahi.</div></div>'}`;
+
+  btn.textContent = '✓ Update Complete';
   btn.className = 'btn btn-success w-full';
   await loadAllData();
-  toast(`✓ ${done.toLocaleString()} ${vendorName} parts imported!`);
+  toast(`✓ ${done.toLocaleString()} parts updated! ${priceChanges.length} prices badli.`);
 }
 
 // ═══════════════════════════════════════
