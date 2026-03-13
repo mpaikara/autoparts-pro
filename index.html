@@ -772,7 +772,7 @@ function showPage(id) {
   const pageActions = {
     dashboard: renderDashboard,
     quotes: () => renderQuotes(),
-    parts: () => renderParts(allParts),
+    parts: () => loadParts(),
     vendors: renderVendors,
     clients: renderClients,
     settings: loadSettings,
@@ -874,18 +874,27 @@ async function renderDashboard() {
 // ═══════════════════════════════════════
 async function loadParts(search = '', cat = '') {
   try {
-    let params = 'select=*,vendor_prices(*)&order=no&limit=200';
-    if (search) params += `&or=(no.ilike.*${search}*,desc_.ilike.*${search}*)`;
-    if (cat) params += `&cat=eq.${cat}`;
+    document.getElementById('parts-count').textContent = 'Loading...';
+    document.getElementById('parts-subtitle').textContent = 'Loading...';
+
+    let params = 'select=id,no,desc_,cat,margin,unit,vendor_prices(vendor_name,price,currency,lead_days)&order=no&limit=200';
+    if (search) params += `&or=(no.ilike.*${encodeURIComponent(search)}*,desc_.ilike.*${encodeURIComponent(search)}*)`;
+    if (cat) params += `&cat=eq.${encodeURIComponent(cat)}`;
+
     const parts = await sbGet('parts', params);
     allParts = parts || [];
     renderParts(allParts);
-  } catch (e) { toast('Parts load error', 'error'); }
+  } catch (e) {
+    toast('Parts load error: ' + e.message, 'error');
+    console.error(e);
+  }
 }
 
 function renderParts(parts) {
+  const search = document.getElementById('parts-search')?.value || '';
+  const total = search ? `${parts.length} results` : `${parts.length} parts shown (search karo specific parts ke liye)`;
   document.getElementById('parts-count').textContent = parts.length + ' parts';
-  document.getElementById('parts-subtitle').textContent = parts.length + ' parts in database';
+  document.getElementById('parts-subtitle').textContent = total;
   const tbody = document.getElementById('parts-tbody');
   const empty = document.getElementById('parts-empty');
   if (!parts.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
