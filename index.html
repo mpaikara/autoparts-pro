@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoParts Pro — Quotation Management System</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  --bg:#070b12; --s1:#0c1220; --s2:#111928; --s3:#182033; --s4:#1e2a42;
+  --border:#1e2d47; --border2:#2c3f60;
+  --gold:#f59e0b; --gold2:#fbbf24; --gold3:#fcd34d;
+  --green:#059669; --green2:#10b981; --green3:#34d399;
+  --blue:#2563eb; --blue2:#3b82f6; --blue3:#60a5fa;
+  --red:#dc2626; --red2:#ef4444; --red3:#f87171;
+  --purple:#7c3aed; --purple2:#8b5cf6;
+  --cyan:#0891b2; --cyan2:#06b6d4;
+  --orange:#ea580c; --orange2:#f97316;
+  --text:#f8fafc; --text2:#e2e8f0; --muted:#64748b; --muted2:#94a3b8; --muted3:#cbd5e1;
+}
+
+/* ═══════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;height:100%;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);height:100%;overflow:hidden;font-size:13px;}
+button{cursor:pointer;font-family:'Outfit',sans-serif;}
+input,select,textarea{font-family:'Outfit',sans-serif;}
+a{text-decoration:none;color:inherit;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--s1);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.app{display:flex;height:100vh;}
+.sidebar{width:228px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width .2s;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:16px;}
+.content{flex:1;overflow-y:auto;padding:24px 28px;}
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════ */
+.brand{padding:20px 18px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.brand-logo{display:flex;align-items:center;gap:10px;}
+.brand-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.brand-text{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.3px;line-height:1.1;}
+.brand-text span{color:var(--gold);}
+.brand-sub{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+.nav{flex:1;overflow-y:auto;padding:14px 10px 10px;}
+.nav-section{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.8px;font-weight:700;padding:12px 10px 5px;margin-top:4px;}
+.nav-section:first-child{margin-top:0;}
+.nav-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border-radius:8px;border:none;background:none;color:var(--muted2);font-size:12.5px;font-weight:500;transition:all .15s;margin-bottom:1px;text-align:left;position:relative;}
+.nav-item:hover{background:var(--s2);color:var(--text2);}
+.nav-item.active{background:rgba(245,158,11,.14);color:var(--gold);}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.8;}
+.nav-item.active svg{opacity:1;}
+.nav-badge{margin-left:auto;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;line-height:1.4;}
+.nb-red{background:var(--red2);color:#fff;}
+.nb-gold{background:var(--gold);color:#000;}
+.nb-green{background:var(--green2);color:#fff;}
+
+.sidebar-footer{border-top:1px solid var(--border);padding:12px 10px;flex-shrink:0;}
+.user-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--s2);}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#000;flex-shrink:0;}
+.user-name{font-size:12px;font-weight:600;color:var(--text2);}
+.user-role{font-size:10px;color:var(--muted);}
+
+/* ═══════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════ */
+.page-heading{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;white-space:nowrap;}
+.topbar-center{flex:1;max-width:360px;}
+.search-global{position:relative;}
+.search-global input{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text2);padding:7px 12px 7px 34px;border-radius:8px;font-size:12px;outline:none;}
+.search-global input:focus{border-color:var(--gold);}
+.search-global svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);width:14px;height:14px;}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.live-pill{display:flex;align-items:center;gap:5px;padding:4px 11px;background:rgba(5,150,105,.12);border:1px solid rgba(16,185,129,.25);border-radius:20px;font-size:10.5px;font-weight:600;color:var(--green3);}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--green2);animation:blink 1.8s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.notif-btn{position:relative;width:34px;height:34px;border-radius:8px;background:var(--s2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted2);}
+.notif-btn:hover{border-color:var(--gold);color:var(--gold);}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--red2);border:2px solid var(--s1);}
+
+/* ═══════════════════════════════════════
+   PAGES
+═══════════════════════════════════════ */
+.page{display:none;animation:fadeIn .2s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════
+   TYPOGRAPHY & LAYOUT HELPERS
+═══════════════════════════════════════ */
+.page-title{margin-bottom:20px;}
+.page-title h2{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;}
+.page-title p{font-size:12px;color:var(--muted2);margin-top:3px;}
+.flex{display:flex;}.aic{align-items:center;}.jb{justify-content:space-between;}
+.gap1{gap:6px;}.gap2{gap:10px;}.gap3{gap:16px;}.gap4{gap:24px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.mt1{margin-top:6px;}.mt2{margin-top:12px;}.mt3{margin-top:20px;}.mt4{margin-top:28px;}
+.mb1{margin-bottom:6px;}.mb2{margin-bottom:12px;}.mb3{margin-bottom:20px;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.text-gold{color:var(--gold);}.text-green{color:var(--green3);}
+.text-red{color:var(--red3);}.text-blue{color:var(--blue3);}
+.text-muted{color:var(--muted2);}.text-sm{font-size:11px;}
+.bold{font-weight:700;}.w-full{width:100%;}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ═══════════════════════════════════════
+   CARDS
+═══════════════════════════════════════ */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.card-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13.5px;}
+.card-body{padding:18px;}
+.stat-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc-gold::before{background:linear-gradient(90deg,var(--gold),var(--gold2));}
+.sc-green::before{background:linear-gradient(90deg,var(--green),var(--green2));}
+.sc-blue::before{background:linear-gradient(90deg,var(--blue),var(--blue2));}
+.sc-red::before{background:linear-gradient(90deg,var(--red),var(--red2));}
+.sc-purple::before{background:linear-gradient(90deg,var(--purple),var(--purple2));}
+.sc-cyan::before{background:linear-gradient(90deg,var(--cyan),var(--cyan2));}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;}
+.stat-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;}
+.stat-change{font-size:11px;margin-top:4px;}
+.up{color:var(--green3);}.down{color:var(--red3);}
+
+/* ═══════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;font-family:'Outfit',sans-serif;font-weight:600;font-size:12px;transition:all .15s;white-space:nowrap;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--gold);color:#000;}
+.btn-primary:hover{background:var(--gold2);}
+.btn-success{background:var(--green2);color:#fff;}
+.btn-success:hover{background:var(--green3);color:#000;}
+.btn-danger{background:var(--red2);color:#fff;}
+.btn-danger:hover{background:var(--red3);}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+.btn-ghost{background:transparent;color:var(--muted2);border:none;}
+.btn-ghost:hover{color:var(--text);}
+.btn-soft-green{background:rgba(16,185,129,.12);color:var(--green3);border:1px solid rgba(16,185,129,.25);}
+.btn-soft-green:hover{background:rgba(16,185,129,.22);}
+.btn-soft-red{background:rgba(239,68,68,.12);color:var(--red3);border:1px solid rgba(239,68,68,.25);}
+.btn-soft-red:hover{background:rgba(239,68,68,.22);}
+.btn-soft-gold{background:rgba(245,158,11,.12);color:var(--gold2);border:1px solid rgba(245,158,11,.25);}
+.btn-soft-gold:hover{background:rgba(245,158,11,.22);}
+.btn-sm{padding:5px 12px;font-size:11px;border-radius:7px;}
+.btn-xs{padding:3px 9px;font-size:10px;border-radius:6px;}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center;}
+.btn-icon-sm{width:26px;height:26px;padding:0;justify-content:center;border-radius:6px;}
+
+/* ═══════════════════════════════════════
+   BADGES
+═══════════════════════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;}
+.b-gold{background:rgba(245,158,11,.15);color:var(--gold2);border:1px solid rgba(245,158,11,.25);}
+.b-green{background:rgba(16,185,129,.15);color:var(--green3);border:1px solid rgba(16,185,129,.25);}
+.b-blue{background:rgba(59,130,246,.15);color:var(--blue3);border:1px solid rgba(59,130,246,.25);}
+.b-red{background:rgba(239,68,68,.15);color:var(--red3);border:1px solid rgba(239,68,68,.25);}
+.b-purple{background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.25);}
+.b-cyan{background:rgba(6,182,212,.15);color:#67e8f9;border:1px solid rgba(6,182,212,.25);}
+.b-gray{background:rgba(100,116,139,.12);color:var(--muted3);border:1px solid rgba(100,116,139,.2);}
+
+/* ═══════════════════════════════════════
+   FORMS
+═══════════════════════════════════════ */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg-full{grid-column:1/-1;}
+.fg-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+label,.label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;font-weight:700;}
+.inp{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:12.5px;outline:none;transition:border-color .15s;width:100%;}
+.inp:focus{border-color:var(--gold);}
+.inp::placeholder{color:var(--muted);}
+.inp-sm{padding:6px 10px;font-size:11.5px;}
+select.inp option{background:var(--s2);}
+textarea.inp{resize:vertical;min-height:80px;}
+
+/* ═══════════════════════════════════════
+   TABLE
+═══════════════════════════════════════ */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:9px 14px;text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;border-bottom:1px solid var(--border);background:var(--s2);font-weight:700;white-space:nowrap;}
+td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid rgba(30,45,71,.5);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.018);}
+.td-sm{font-size:11px;color:var(--muted2);}
+
+/* ═══════════════════════════════════════
+   MODALS
+═══════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:16px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+.modal-sm{max-width:480px;}
+.modal-md{max-width:680px;}
+.modal-lg{max-width:900px;}
+.modal-hd{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;}
+.modal-body{padding:22px;overflow-y:auto;flex:1;}
+.modal-ft{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;}
+.close-btn{width:28px;height:28px;border-radius:6px;background:var(--s3);border:none;color:var(--muted2);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.close-btn:hover{color:var(--text);background:var(--s4);}
+
+/* ═══════════════════════════════════════
+   ALERT BARS
+═══════════════════════════════════════ */
+.alert{display:flex;gap:12px;padding:13px 16px;border-radius:10px;align-items:flex-start;}
+.alert-icon{font-size:16px;flex-shrink:0;line-height:1.4;}
+.alert-content{}
+.alert-title{font-weight:700;font-size:12.5px;margin-bottom:2px;}
+.alert-text{font-size:11.5px;color:var(--muted2);line-height:1.5;}
+.alert-gold{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);}
+.alert-red{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);}
+.alert-green{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);}
+.alert-blue{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);}
+
+/* ═══════════════════════════════════════
+   QUOTE BUILDER SPECIFIC
+═══════════════════════════════════════ */
+.qb-header{display:grid;grid-template-columns:2fr 70px 115px 80px 80px 105px 30px;gap:8px;padding:8px 0 10px;border-bottom:1px solid var(--border);}
+.qb-header span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700;}
+.qb-row{display:grid;grid-template-columns:2fr 70px 115px 80px 80px 105px 30px;gap:8px;padding:8px 0;border-bottom:1px solid rgba(30,45,71,.4);align-items:center;}
+.qb-row .inp{padding:6px 9px;font-size:11.5px;}
+.del-btn{width:26px;height:26px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:13px;transition:all .15s;}
+.del-btn:hover{background:rgba(239,68,68,.25);}
+.totals-box{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px;max-width:300px;margin-left:auto;margin-top:14px;}
+.tot-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;color:var(--muted2);}
+.tot-row.grand{border-top:1px solid var(--border);margin-top:8px;padding-top:10px;color:var(--text);font-family:'Syne',sans-serif;font-weight:800;font-size:16px;}
+.tot-val{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.tot-row.grand .tot-val{font-size:15px;color:var(--gold);}
+
+/* ═══════════════════════════════════════
+   VENDOR COMPARE CARDS
+═══════════════════════════════════════ */
+.vc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
+.vc-card{border:1px solid var(--border);border-radius:9px;padding:13px;cursor:pointer;transition:all .15s;background:var(--s2);}
+.vc-card:hover,.vc-card.sel{border-color:var(--gold);background:rgba(245,158,11,.06);}
+.vc-card.best{border-color:var(--green2);}
+.vc-card.best.sel{border-color:var(--gold);}
+.vc-name{font-size:11px;color:var(--muted2);margin-bottom:3px;font-weight:500;}
+.vc-price{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text);}
+.vc-card.sel .vc-price{color:var(--gold);}
+.vc-meta{font-size:10px;color:var(--muted);margin-top:3px;}
+.vc-best-tag{display:inline-block;font-size:9px;font-weight:700;padding:1px 7px;border-radius:10px;background:rgba(16,185,129,.2);color:var(--green3);margin-top:4px;}
+
+/* ═══════════════════════════════════════
+   PIPELINE CARDS
+═══════════════════════════════════════ */
+.pipe-card{border-radius:12px;padding:18px;border:1px solid var(--border);}
+.pipe-web{background:rgba(5,150,105,.06);border-color:rgba(16,185,129,.2);}
+.pipe-email{background:rgba(37,99,235,.06);border-color:rgba(59,130,246,.2);}
+.pipe-upload{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.2);}
+.pipe-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;}
+.pipe-sub{font-size:11px;color:var(--muted2);margin-bottom:12px;}
+.prog-bar{height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width 1.2s ease;}
+
+/* ═══════════════════════════════════════
+   UPLOAD ZONE
+═══════════════════════════════════════ */
+.drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2);}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--gold);background:rgba(245,158,11,.04);}
+.drop-title{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;margin:10px 0 5px;}
+.drop-sub{font-size:12px;color:var(--muted2);}
+
+/* ═══════════════════════════════════════
+   SPARKLINE
+═══════════════════════════════════════ */
+.sparkline{display:inline-flex;align-items:flex-end;gap:2px;height:32px;}
+.spark-b{width:6px;border-radius:2px 2px 0 0;background:var(--s3);transition:all .5s;}
+
+/* ═══════════════════════════════════════
+   PDF STYLES
+═══════════════════════════════════════ */
+.pdf-doc{background:#fff;color:#1a1a2e;padding:36px 40px;border-radius:10px;font-family:'Outfit',sans-serif;font-size:12px;line-height:1.5;}
+.pdf-co-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#111;}
+.pdf-tag-line{font-size:10px;color:#888;margin-top:2px;}
+.pdf-divider{border:none;border-top:3px solid #f59e0b;margin:14px 0;}
+.pdf-sec-label{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:#aaa;font-weight:700;margin:14px 0 5px;}
+.pdf-table{width:100%;border-collapse:collapse;font-size:11px;}
+.pdf-table th{background:#f4f5f7;padding:7px 10px;border:1px solid #e5e7eb;font-size:9px;color:#666;text-align:left;}
+.pdf-table td{padding:7px 10px;border:1px solid #e5e7eb;}
+.pdf-grand-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#f59e0b;}
+.pdf-footer-note{margin-top:18px;padding-top:12px;border-top:1px solid #eee;font-size:10px;color:#999;line-height:1.6;}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.toast{background:var(--s2);border:1px solid var(--border2);padding:11px 16px;border-radius:10px;font-size:12.5px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;transform:translateY(12px);transition:all .25s;max-width:340px;}
+.toast.show{opacity:1;transform:none;}
+.toast.t-success{border-color:var(--green2);color:var(--green3);}
+.toast.t-error{border-color:var(--red2);color:var(--red3);}
+.toast.t-warn{border-color:var(--gold);color:var(--gold2);}
+.toast.t-info{border-color:var(--blue2);color:var(--blue3);}
+
+/* ═══════════════════════════════════════
+   CONFIRM DIALOG
+═══════════════════════════════════════ */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:600;display:none;align-items:center;justify-content:center;}
+.confirm-overlay.open{display:flex;}
+.confirm-box{background:var(--s1);border:1px solid var(--border2);border-radius:14px;padding:28px;max-width:380px;width:90%;text-align:center;}
+.confirm-icon{font-size:36px;margin-bottom:12px;}
+.confirm-title{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;}
+.confirm-text{font-size:12.5px;color:var(--muted2);margin-bottom:20px;line-height:1.5;}
+.confirm-actions{display:flex;gap:10px;justify-content:center;}
+
+/* ═══════════════════════════════════════
+   MISC COMPONENTS
+═══════════════════════════════════════ */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted2);}
+.empty-state .es-icon{font-size:40px;margin-bottom:12px;}
+.empty-state h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text2);}
+.empty-state p{font-size:12px;}
+.tag-input-wrap{display:flex;flex-wrap:wrap;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-height:40px;align-items:center;}
+.tag{background:rgba(245,158,11,.15);color:var(--gold2);padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;}
+.tag-remove{cursor:pointer;opacity:.6;}
+.tag-remove:hover{opacity:1;}
+.section-divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
+.info-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,45,71,.4);}
+.info-row:last-child{border-bottom:none;}
+.info-label{width:140px;flex-shrink:0;font-size:11px;color:var(--muted2);font-weight:500;}
+.info-val{font-size:12.5px;color:var(--text);}
+.progress-step{display:flex;align-items:center;gap:10px;padding:8px 0;}
+.step-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.step-line{flex:1;height:1px;background:var(--border);}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);gap:0;margin-bottom:20px;}
+.tab-btn{padding:10px 18px;border:none;background:none;color:var(--muted2);font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px;}
+.tab-btn:hover{color:var(--text2);}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media(max-width:900px){
+  .sidebar{width:64px;}
+  .brand-text,.brand-sub,.nav-section,.nav-item span,.nav-badge,.user-name,.user-role{display:none;}
+  .brand-logo{justify-content:center;}
+  .nav-item{justify-content:center;padding:10px;}
+  .user-row{justify-content:center;padding:8px;}
+  .grid4{grid-template-columns:1fr 1fr;}
+  .form-grid,.grid2{grid-template-columns:1fr;}
+  .vc-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══════════════════════════════════
+     SIDEBAR
+══════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="brand-icon">🔧</div>
+      <div>
+        <div class="brand-text">Auto<span>Parts</span> Pro</div>
+        <div class="brand-sub">Export System</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">Overview</div>
+    <button class="nav-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Dashboard</span>
+    </button>
+
+    <div class="nav-section">Quotations</div>
+    <button class="nav-item" data-page="new-quote">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      <span>New Quotation</span>
+    </button>
+    <button class="nav-item" data-page="quotes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>All Quotations</span>
+      <span class="nav-badge nb-gold" id="nb-quotes">0</span>
+    </button>
+
+    <div class="nav-section">Price Management</div>
+    <button class="nav-item" data-page="pipeline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Price Pipeline</span>
+      <span class="nav-badge nb-red" id="nb-alerts" style="display:none">!</span>
+    </button>
+    <button class="nav-item" data-page="upload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      <span>Upload Prices</span>
+    </button>
+
+    <div class="nav-section">Masters</div>
+    <button class="nav-item" data-page="parts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      <span>Parts Catalog</span>
+    </button>
+    <button class="nav-item" data-page="vendors">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span>Vendors</span>
+    </button>
+    <button class="nav-item" data-page="clients">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Clients</span>
+    </button>
+
+    <div class="nav-section">System</div>
+    <button class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="avatar" id="user-avatar">A</div>
+      <div>
+        <div class="user-name" id="user-disp-name">Admin</div>
+        <div class="user-role" id="user-disp-company">Global Spares Export</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════
+     MAIN AREA
+══════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-heading" id="page-heading">Dashboard</div>
+    <div class="topbar-center">
+      <div class="search-global">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="inp" placeholder="Search parts, quotes, clients..." oninput="globalSearch(this.value)" style="background:var(--s2)">
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="live-pill"><div class="pulse"></div>Live</div>
+      <button class="notif-btn" onclick="showPage('pipeline')" title="Price Alerts">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="notif-dot" id="notif-dot" style="display:none"></div>
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('new-quote')">+ New Quote</button>
+    </div>
+  </div>
+
+  <div class="content" id="main-content">
+
+    <!-- ════════ DASHBOARD ════════ -->
+    <div class="page active" id="page-dashboard">
+      <div id="dash-alerts"></div>
+      <div class="grid4 mb3" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">Recent Quotations</div>
+            <button class="btn btn-outline btn-sm" onclick="showPage('quotes')">View All</button>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Quote #</th><th>Client</th><th>Value</th><th>Margin</th><th>Status</th><th></th></tr></thead>
+            <tbody id="dash-recent-quotes"></tbody></table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Today's Price Updates</div></div>
+          <div style="padding:10px 16px;max-height:280px;overflow-y:auto;" id="price-feed-list"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Vendor Pipeline Status</div><div class="flex gap2" id="pipeline-badges"></div></div>
+        <div style="padding:16px 18px;" class="grid3" id="pipeline-summary"></div>
+      </div>
+    </div>
+
+    <!-- ════════ NEW QUOTATION ════════ -->
+    <div class="page" id="page-new-quote">
+      <div class="page-title flex jb aic">
+        <div>
+          <h2>New Quotation</h2>
+          <p>Quote # <span class="mono text-gold" id="new-quote-num">Q-2024-001</span></p>
+        </div>
+        <div class="flex gap2">
+          <button class="btn btn-outline" onclick="previewPDF()">👁 Preview PDF</button>
+          <button class="btn btn-primary" onclick="saveQuote()">✓ Save & Send</button>
+        </div>
+      </div>
+
+      <div class="card mb3">
+        <div class="card-hd"><div class="card-title">Client Information</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="fg">
+              <label>Client *</label>
+              <select class="inp" id="q-client" onchange="onClientChange()">
+                <option value="">— Select Client —</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Country</label>
+              <input class="inp" id="q-country" readonly>
+            </div>
+            <div class="fg">
+              <label>Email</label>
+              <input class="inp" id="q-email" type="email" placeholder="buyer@company.com">
+            </div>
+            <div class="fg">
+              <label>Currency</label>
+              <select class="inp" id="q-currency">
+                <option value="USD">USD ($)</option><option value="AED">AED (د.إ)</option>
+                <option value="EUR">EUR (€)</option><option value="SAR">SAR (﷼)</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Payment Terms</label>
+              <select class="inp" id="q-terms">
+                <option>50% Advance, 50% Before Shipment</option>
+                <option>100% Advance</option><option>Letter of Credit (LC)</option><option>Net 30 Days</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Validity (Days)</label>
+              <input class="inp" type="number" id="q-validity" value="30">
+            </div>
+            <div class="fg fg-full">
+              <label>Remarks / Notes</label>
+              <textarea class="inp" id="q-remarks" rows="2" placeholder="Any special instructions..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Parts & Pricing</div>
+          <div class="flex gap2">
+            <button class="btn btn-outline btn-sm" onclick="openPartModal()">+ Add Part</button>
+            <button class="btn btn-ghost btn-sm text-gold" onclick="openBulkAddModal()">📋 Bulk Add</button>
+          </div>
+        </div>
+        <div style="padding:14px 18px;">
+          <div class="qb-header">
+            <span>Part / Description</span><span>Qty</span><span>Unit Price</span>
+            <span>Margin%</span><span>Disc%</span><span>Line Total</span><span></span>
+          </div>
+          <div id="qb-rows-container"></div>
+          <button class="btn btn-ghost btn-sm mt2" style="color:var(--gold)" onclick="addEmptyRow()">+ Add Empty Row</button>
+          <div class="totals-box">
+            <div class="tot-row"><span>Subtotal</span><span class="mono tot-val" id="t-sub">$0.00</span></div>
+            <div class="tot-row">
+              <span>Overall Discount</span>
+              <span class="flex aic gap1">
+                <input class="inp inp-sm" type="number" id="t-disc" value="0" style="width:52px;text-align:center" oninput="recalcTotals()"> %
+              </span>
+            </div>
+            <div class="tot-row"><span>After Discount</span><span class="mono tot-val" id="t-after">$0.00</span></div>
+            <div class="tot-row"><span>Shipping (Est.)</span><span class="mono tot-val" id="t-ship">$250.00</span></div>
+            <div class="tot-row grand"><span>GRAND TOTAL</span><span class="tot-val" id="t-grand">$250.00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ ALL QUOTATIONS ════════ -->
+    <div class="page" id="page-quotes">
+      <div class="page-title flex jb aic">
+        <div><h2>All Quotations</h2><p>Track quotes — Pending se Won/Lost tak</p></div>
+        <button class="btn btn-primary" onclick="showPage('new-quote')">+ New</button>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="flex gap2 aic" style="flex:1">
+            <input class="inp inp-sm" style="max-width:280px" placeholder="🔍 Search quote, client, part..." oninput="filterQuotes(this.value)" id="q-search-inp">
+            <select class="inp inp-sm" style="width:130px" onchange="filterQuotes(document.getElementById('q-search-inp').value)" id="q-status-filter">
+              <option value="">All Status</option>
+              <option value="Draft">Draft</option><option value="Sent">Sent</option>
+              <option value="Won">Won</option><option value="Lost">Lost</option>
+            </select>
+          </div>
+          <span class="text-sm text-muted" id="q-count-label">0 quotations</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Quote #</th><th>Client</th><th>Country</th><th>Parts</th><th>Value</th><th>Avg Margin</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="quotes-tbody"></tbody>
+          </table>
+        </div>
+        <div id="quotes-empty" class="empty-state" style="display:none">
+          <div class="es-icon">📋</div>
+          <h3>No Quotations Yet</h3>
+          <p>Pehla quote banane ke liye "New Quotation" click karo</p>
+          <button class="btn btn-primary mt2" onclick="showPage('new-quote')">+ New Quotation</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ PRICE PIPELINE ════════ -->
+    <div class="page" id="page-pipeline">
+      <div class="page-title"><h2>Price Pipeline</h2><p>Teenon sources se aane wali prices — review aur approve karo</p></div>
+      <div class="grid3 mb3">
+        <div class="pipe-card pipe-web">
+          <div class="pipe-title">🌐 Web Scrapers</div>
+          <div class="pipe-sub">Auto-run daily 9:00 AM</div>
+          <div class="prog-bar mb1"><div class="prog-fill" style="background:linear-gradient(90deg,var(--green),var(--green2));width:0%" id="scraper-prog"></div></div>
+          <div class="flex jb text-sm text-muted mb2"><span id="scraper-label">0/0 vendors</span><span id="scraper-pct">0%</span></div>
+          <button class="btn btn-soft-green btn-sm w-full" onclick="runScraper()">▶ Run Scraper Now</button>
+        </div>
+        <div class="pipe-card pipe-email">
+          <div class="pipe-title">📧 Email Parser</div>
+          <div class="pipe-sub">Gmail auto-monitor</div>
+          <div class="prog-bar mb1"><div class="prog-fill" style="background:linear-gradient(90deg,var(--blue),var(--blue2));width:0%" id="email-prog"></div></div>
+          <div class="flex jb text-sm text-muted mb2"><span id="email-label">0 emails</span><span id="email-pct">0%</span></div>
+          <button class="btn btn-outline btn-sm w-full" onclick="checkEmails()">Check Inbox Now</button>
+        </div>
+        <div class="pipe-card pipe-upload">
+          <div class="pipe-title">📱 WhatsApp Upload</div>
+          <div class="pipe-sub">Manual file upload</div>
+          <div class="prog-bar mb1"><div class="prog-fill" style="background:linear-gradient(90deg,var(--gold),var(--gold2));width:0%" id="upload-prog"></div></div>
+          <div class="flex jb text-sm text-muted mb2"><span id="upload-label">0 files</span><span id="upload-pct">0%</span></div>
+          <button class="btn btn-primary btn-sm w-full" onclick="showPage('upload')">Upload File</button>
+        </div>
+      </div>
+
+      <div class="card mb3" id="approval-card">
+        <div class="card-hd">
+          <div class="card-title">Pending Price Approvals <span class="badge b-red" id="approval-count">0</span></div>
+          <div class="flex gap2">
+            <button class="btn btn-soft-green btn-sm" onclick="approveAllPrices()">✓ Approve All</button>
+            <button class="btn btn-outline btn-sm" onclick="exportPriceChanges()">↓ Export</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Part No.</th><th>Description</th><th>Vendor</th><th>Old Price</th><th>New Price</th><th>Change</th><th>Source</th><th>Affected Quotes</th><th>Actions</th></tr></thead>
+            <tbody id="approval-tbody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="approval-empty" style="display:none">
+          <div class="es-icon">✅</div>
+          <h3>All Prices Up to Date</h3>
+          <p>Koi pending approval nahi hai</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Price History — 7 Day Trend</div></div>
+        <div class="table-wrap" style="padding:0">
+          <table>
+            <thead><tr><th>Part No.</th><th>Description</th><th>7D Trend</th><th>Min</th><th>Max</th><th>Current</th><th>Change</th></tr></thead>
+            <tbody id="price-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ UPLOAD PRICES ════════ -->
+    <div class="page" id="page-upload">
+      <div class="page-title"><h2>Upload Price File</h2><p>Vendor ka Excel/CSV yahan upload karo — system auto-parse karega</p></div>
+      <div class="grid2">
+        <div>
+          <div class="drop-zone" id="drop-zone"
+               onclick="document.getElementById('file-inp').click()"
+               ondragover="event.preventDefault();this.classList.add('drag')"
+               ondragleave="this.classList.remove('drag')"
+               ondrop="handleFileDrop(event)">
+            <input type="file" id="file-inp" style="display:none" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this.files[0])">
+            <div style="font-size:40px;margin-bottom:10px">📂</div>
+            <div class="drop-title">Excel ya CSV Drop Karo</div>
+            <div class="drop-sub">ya click karke file choose karo</div>
+            <div class="mt2 text-sm text-muted">.xlsx · .xls · .csv supported</div>
+          </div>
+
+          <div class="card mt3" id="file-preview-card" style="display:none">
+            <div class="card-hd">
+              <div class="card-title">File Preview</div>
+              <span class="badge b-green" id="file-row-count">0 rows</span>
+            </div>
+            <div class="card-body">
+              <div class="form-grid mb3">
+                <div class="fg"><label>Part No. Column</label><select class="inp" id="col-partno"></select></div>
+                <div class="fg"><label>Price Column</label><select class="inp" id="col-price"></select></div>
+                <div class="fg"><label>Vendor Name *</label><input class="inp" id="upload-vendor-name" placeholder="e.g. Shree Ram Auto"></div>
+                <div class="fg"><label>Currency</label>
+                  <select class="inp" id="upload-currency"><option>USD</option><option>INR</option><option>JPY</option></select>
+                </div>
+              </div>
+              <div class="table-wrap mb3" id="preview-table-container"></div>
+              <button class="btn btn-primary w-full" onclick="importUploadedPrices()">✓ Import & Update Prices</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card mb3">
+            <div class="card-hd"><div class="card-title">Expected Format</div></div>
+            <div class="card-body">
+              <div class="text-sm text-muted mb2">Vendor ka Excel iss format mein hona chahiye (columns auto-detect honge):</div>
+              <div class="table-wrap">
+                <table><thead><tr><th>Part No.</th><th>Price (USD)</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">TY-ENG-4512</td><td class="mono">18.50</td><td class="text-muted">Toyota Gasket</td></tr>
+                  <tr><td class="mono">TY-BRK-0098</td><td class="mono">12.00</td><td class="text-muted">Brake Pad Set</td></tr>
+                </tbody></table>
+              </div>
+              <div class="alert alert-green mt2" style="padding:10px 12px;">
+                <div class="alert-icon" style="font-size:13px">💡</div>
+                <div class="alert-text" style="font-size:11px">System automatically Part No. match karega. Unknown parts flag honge review ke liye.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Recent Uploads</div></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>File</th><th>Vendor</th><th>Parts</th><th>Date</th></tr></thead>
+                <tbody id="upload-history-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ PARTS CATALOG ════════ -->
+    <div class="page" id="page-parts">
+      <div class="page-title flex jb aic">
+        <div><h2>Parts Catalog</h2><p>Sab parts — numbers, vendors, prices</p></div>
+        <button class="btn btn-primary" onclick="openAddPartModal()">+ Add Part</button>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="flex gap2 aic" style="flex:1">
+            <input class="inp inp-sm" style="max-width:300px" placeholder="🔍 Part number ya naam..." oninput="filterPartsCatalog(this.value)" id="parts-search-inp">
+            <select class="inp inp-sm" style="width:140px" onchange="filterPartsCatalog(document.getElementById('parts-search-inp').value)" id="parts-cat-filter">
+              <option value="">All Categories</option>
+              <option>Engine</option><option>Brakes</option><option>Suspension</option>
+              <option>Electrical</option><option>Filters</option><option>Body</option><option>Other</option>
+            </select>
+          </div>
+          <span class="text-sm text-muted" id="parts-count-label">0 parts</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Part No.</th><th>Description</th><th>Category</th><th>Best Price</th><th>Vendors</th><th>Margin</th><th>HSN</th><th>Updated</th><th>Actions</th></tr></thead>
+            <tbody id="parts-tbody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="parts-empty" style="display:none">
+          <div class="es-icon">🔧</div>
+          <h3>No Parts Added</h3>
+          <p>+ Add Part se pehla part add karo</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ VENDORS ════════ -->
+    <div class="page" id="page-vendors">
+      <div class="page-title flex jb aic">
+        <div><h2>Vendors</h2><p>Sare suppliers — teenon types</p></div>
+        <button class="btn btn-primary" onclick="openAddVendorModal()">+ Add Vendor</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Vendor Name</th><th>Location</th><th>Type</th><th>Parts Count</th><th>Lead Days</th><th>Last Update</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="vendors-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ CLIENTS ════════ -->
+    <div class="page" id="page-clients">
+      <div class="page-title flex jb aic">
+        <div><h2>Clients</h2><p>Buyers ki history aur preferences</p></div>
+        <button class="btn btn-primary" onclick="openAddClientModal()">+ Add Client</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Company</th><th>Country</th><th>Contact</th><th>Quotes</th><th>Total Value</th><th>Discount</th><th>Payment</th><th>Actions</th></tr></thead>
+            <tbody id="clients-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ SETTINGS ════════ -->
+    <div class="page" id="page-settings">
+      <div class="page-title"><h2>Settings</h2><p>Company info aur system preferences</p></div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(this,'tab-company')">Company Info</button>
+        <button class="tab-btn" onclick="switchTab(this,'tab-bank')">Bank Details</button>
+        <button class="tab-btn" onclick="switchTab(this,'tab-prefs')">Quotation Defaults</button>
+        <button class="tab-btn" onclick="switchTab(this,'tab-data')">Data Management</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-company">
+        <div class="card" style="max-width:620px">
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="fg fg-full"><label>Company Name *</label><input class="inp" id="s-company-name"></div>
+              <div class="fg fg-full"><label>Address Line 1</label><input class="inp" id="s-addr1"></div>
+              <div class="fg fg-full"><label>Address Line 2</label><input class="inp" id="s-addr2"></div>
+              <div class="fg"><label>Phone</label><input class="inp" id="s-phone" type="tel"></div>
+              <div class="fg"><label>Email</label><input class="inp" id="s-email" type="email"></div>
+              <div class="fg"><label>Website</label><input class="inp" id="s-website"></div>
+              <div class="fg"><label>GST / Tax Number</label><input class="inp" id="s-gst"></div>
+            </div>
+            <button class="btn btn-primary mt3" onclick="saveSettings()">Save Company Info</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-bank">
+        <div class="card" style="max-width:620px">
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="fg fg-full"><label>Bank Name</label><input class="inp" id="s-bank-name"></div>
+              <div class="fg fg-full"><label>Account Holder</label><input class="inp" id="s-acc-holder"></div>
+              <div class="fg"><label>Account Number</label><input class="inp" id="s-acc-no"></div>
+              <div class="fg"><label>IFSC Code</label><input class="inp" id="s-ifsc"></div>
+              <div class="fg"><label>SWIFT Code</label><input class="inp" id="s-swift"></div>
+              <div class="fg"><label>Bank Address</label><input class="inp" id="s-bank-addr"></div>
+            </div>
+            <button class="btn btn-primary mt3" onclick="saveSettings()">Save Bank Details</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-prefs">
+        <div class="card" style="max-width:620px">
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="fg"><label>Default Currency</label>
+                <select class="inp" id="s-currency"><option>USD</option><option>AED</option><option>EUR</option><option>SAR</option></select>
+              </div>
+              <div class="fg"><label>Default Margin %</label><input class="inp" type="number" id="s-margin" value="20"></div>
+              <div class="fg"><label>Quote Validity (Days)</label><input class="inp" type="number" id="s-validity" value="30"></div>
+              <div class="fg"><label>Shipping Default (USD)</label><input class="inp" type="number" id="s-shipping" value="250"></div>
+              <div class="fg fg-full"><label>Default Payment Terms</label><input class="inp" id="s-payment-terms"></div>
+              <div class="fg"><label>Alert Threshold %</label><input class="inp" type="number" id="s-alert-thresh" value="10"><div class="text-sm text-muted mt1">Price change > this % triggers alert</div></div>
+              <div class="fg"><label>Quote Number Prefix</label><input class="inp" id="s-quote-prefix" value="Q-2024-"></div>
+            </div>
+            <button class="btn btn-primary mt3" onclick="saveSettings()">Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-data">
+        <div class="card" style="max-width:620px">
+          <div class="card-body">
+            <div class="alert alert-gold mb3">
+              <div class="alert-icon">⚠️</div>
+              <div>
+                <div class="alert-title">Data Management</div>
+                <div class="alert-text">Yeh app browser localStorage mein data save karta hai. Data export karke backup rakho.</div>
+              </div>
+            </div>
+            <div class="flex gap2 mb3">
+              <button class="btn btn-outline" onclick="exportAllData()">⬇ Export All Data (JSON)</button>
+              <button class="btn btn-outline" onclick="document.getElementById('import-inp').click()">⬆ Import Data</button>
+              <input type="file" id="import-inp" style="display:none" accept=".json" onchange="importAllData(this.files[0])">
+            </div>
+            <hr class="divider">
+            <button class="btn btn-soft-red" onclick="clearAllData()">🗑 Reset All Data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════ MODALS ═══════ -->
+
+<!-- Add Part to Quote Modal -->
+<div class="modal-overlay" id="modal-add-part">
+  <div class="modal modal-md">
+    <div class="modal-hd">
+      <div class="modal-title">Add Part to Quotation</div>
+      <button class="close-btn" onclick="closeModal('modal-add-part')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg mb3">
+        <label>Search Part</label>
+        <input class="inp" id="part-search-inp" placeholder="Type part number or description..." oninput="searchPartsInModal(this.value)" autofocus>
+      </div>
+      <div id="part-search-results" style="max-height:200px;overflow-y:auto;"></div>
+      <div id="vendor-selection-section" style="display:none;margin-top:16px;">
+        <hr class="divider">
+        <div class="label mb2">Select Vendor / Price Source</div>
+        <div class="vc-grid" id="vc-options-container"></div>
+        <div class="fg-3 mt3">
+          <div class="fg"><label>Quantity</label><input class="inp" type="number" id="m-qty" value="1" min="1" oninput="calcModalLine()"></div>
+          <div class="fg"><label>Margin %</label><input class="inp" type="number" id="m-margin" value="20" oninput="calcModalLine()"></div>
+          <div class="fg"><label>Discount %</label><input class="inp" type="number" id="m-disc" value="0" oninput="calcModalLine()"></div>
+        </div>
+        <div style="background:var(--s2);border-radius:9px;padding:14px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+          <span class="text-muted">Line Total</span>
+          <span id="modal-line-total" class="mono" style="font-size:21px;font-weight:700;color:var(--gold)">$0.00</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-part')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddPartToQuote()">Add to Quotation</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Add Modal -->
+<div class="modal-overlay" id="modal-bulk-add">
+  <div class="modal modal-md">
+    <div class="modal-hd">
+      <div class="modal-title">Bulk Add Parts</div>
+      <button class="close-btn" onclick="closeModal('modal-bulk-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-blue mb3">
+        <div class="alert-icon">💡</div>
+        <div class="alert-text">Ek line mein ek part. Format: <span class="mono">PART-NO, QTY</span> ya sirf part numbers. Vendor aur pricing automatically best available se set hogi.</div>
+      </div>
+      <div class="fg">
+        <label>Part Numbers (one per line)</label>
+        <textarea class="inp" id="bulk-parts-input" rows="8" placeholder="TY-ENG-4512, 5&#10;TY-BRK-0098, 10&#10;HN-SUS-2241, 4&#10;TY-FLT-1122, 20"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('modal-bulk-add')">Cancel</button>
+      <button class="btn btn-primary" onclick="doBulkAdd()">Add All Parts</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF Preview Modal -->
+<div class="modal-overlay" id="modal-pdf">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div class="modal-title">Quotation Preview</div>
+      <div class="flex gap2">
+        <button class="btn btn-primary btn-sm" onclick="printQuotation()">🖨 Print / Download PDF</button>
+        <button class="close-btn" onclick="closeModal('modal-pdf')">×</button>
+      </div>
+    </div>
+    <div class="modal-body" id="pdf-render-zone"></div>
+  </div>
+</div>
+
+<!-- Add Part to Catalog Modal -->
+<div class="modal-overlay" id="modal-add-part-catalog">
+  <div class="modal modal-md">
+    <div class="modal-hd">
+      <div class="modal-title" id="part-catalog-modal-title">Add Part to Catalog</div>
+      <button class="close-btn" onclick="closeModal('modal-add-part-catalog')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label>Part Number *</label><input class="inp" id="pc-no" placeholder="e.g. TY-ENG-4512"></div>
+        <div class="fg"><label>Category *</label>
+          <select class="inp" id="pc-cat"><option>Engine</option><option>Brakes</option><option>Suspension</option><option>Electrical</option><option>Filters</option><option>Body</option><option>Other</option></select>
+        </div>
+        <div class="fg fg-full"><label>Description *</label><input class="inp" id="pc-desc" placeholder="Full part name and specifications"></div>
+        <div class="fg"><label>Default Margin %</label><input class="inp" type="number" id="pc-margin" value="20"></div>
+        <div class="fg"><label>Unit</label>
+          <select class="inp" id="pc-unit"><option>PCS</option><option>SET</option><option>KIT</option><option>PAIR</option><option>MTR</option></select>
+        </div>
+        <div class="fg"><label>HSN Code</label><input class="inp" id="pc-hsn" placeholder="84099900"></div>
+        <div class="fg"><label>Min Order Qty</label><input class="inp" type="number" id="pc-moq" value="1"></div>
+      </div>
+      <hr class="divider">
+      <div class="label mb2">Vendor Prices</div>
+      <div id="pc-vendor-rows"></div>
+      <button class="btn btn-ghost btn-sm mt2" style="color:var(--gold)" onclick="addVendorPriceRow()">+ Add Vendor</button>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-part-catalog')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePartCatalog()">Save Part</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Vendor Modal -->
+<div class="modal-overlay" id="modal-add-vendor">
+  <div class="modal modal-sm">
+    <div class="modal-hd">
+      <div class="modal-title" id="vendor-modal-title">Add Vendor</div>
+      <button class="close-btn" onclick="closeModal('modal-add-vendor')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="fg"><label>Vendor Name *</label><input class="inp" id="v-name" placeholder="e.g. Shree Ram Auto Parts"></div>
+        <div class="fg"><label>Location</label><input class="inp" id="v-location" placeholder="e.g. Delhi, India"></div>
+        <div class="fg"><label>Type *</label>
+          <select class="inp" id="v-type">
+            <option value="website">🌐 Website/Portal (Auto Scraper)</option>
+            <option value="email">📧 Email CSV/Excel (Auto Parser)</option>
+            <option value="upload">📱 WhatsApp/Manual Upload</option>
+          </select>
+        </div>
+        <div class="fg" id="v-url-row"><label>Portal/Website URL</label><input class="inp" id="v-url" placeholder="https://vendor.com/prices"></div>
+        <div class="fg"><label>Contact Email</label><input class="inp" id="v-email" type="email"></div>
+        <div class="fg"><label>Lead Time (Days)</label><input class="inp" type="number" id="v-lead" value="7"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-vendor')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveVendor()">Save Vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Client Modal -->
+<div class="modal-overlay" id="modal-add-client">
+  <div class="modal modal-md">
+    <div class="modal-hd">
+      <div class="modal-title" id="client-modal-title">Add Client</div>
+      <button class="close-btn" onclick="closeModal('modal-add-client')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label>Company Name *</label><input class="inp" id="cl-company"></div>
+        <div class="fg"><label>Country *</label>
+          <select class="inp" id="cl-country-sel">
+            <option>🇦🇪 United Arab Emirates</option><option>🇸🇦 Saudi Arabia</option>
+            <option>🇳🇬 Nigeria</option><option>🇰🇪 Kenya</option><option>🇪🇬 Egypt</option>
+            <option>🇵🇰 Pakistan</option><option>🇧🇩 Bangladesh</option><option>🇸🇬 Singapore</option>
+            <option>🇿🇦 South Africa</option><option>🇬🇭 Ghana</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label>Contact Person</label><input class="inp" id="cl-contact"></div>
+        <div class="fg"><label>Email *</label><input class="inp" id="cl-email" type="email"></div>
+        <div class="fg"><label>Phone</label><input class="inp" id="cl-phone" type="tel"></div>
+        <div class="fg"><label>Currency Preference</label>
+          <select class="inp" id="cl-curr-pref"><option>USD</option><option>AED</option><option>EUR</option><option>SAR</option></select>
+        </div>
+        <div class="fg"><label>Default Discount %</label><input class="inp" type="number" id="cl-disc" value="0"></div>
+        <div class="fg"><label>Payment Terms</label>
+          <select class="inp" id="cl-terms">
+            <option>50% Advance, 50% Before Shipment</option>
+            <option>100% Advance</option><option>Letter of Credit (LC)</option><option>Net 30 Days</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-client')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Are you sure?</div>
+    <div class="confirm-text" id="confirm-text">This action cannot be undone.</div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok-btn" onclick="confirmOk()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN APPLICATION JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════════════════════
+   AutoParts Pro — Complete Application JavaScript
+   All data stored in localStorage for persistence
+═══════════════════════════════════════════════════════════ */
+
+'use strict';
+
+// ═══════════════════════════════════
+// STATE & STORAGE
+// ═══════════════════════════════════
+const DB_KEY = 'autoparts_pro_v1';
+
+const defaultDB = {
+  settings: {
+    companyName: 'Global Spares Export Co.',
+    addr1: 'B-42, Industrial Area, Phase 2',
+    addr2: 'New Delhi - 110020, India',
+    phone: '+91 98765 43210',
+    email: 'export@globalspares.com',
+    website: 'www.globalspares.com',
+    gst: '07AABCG1234M1ZX',
+    bankName: 'HDFC Bank',
+    accHolder: 'Global Spares Export Co.',
+    accNo: '50100123456789',
+    ifsc: 'HDFC0001234',
+    swift: 'HDFCINBBXXX',
+    bankAddr: 'Connaught Place Branch, New Delhi',
+    currency: 'USD',
+    defaultMargin: 20,
+    validity: 30,
+    shipping: 250,
+    paymentTerms: '50% Advance, 50% Before Shipment',
+    alertThreshold: 10,
+    quotePrefix: 'Q-2024-',
+  },
+  parts: [
+    { id:'P001', no:'TY-ENG-4512', desc:'Toyota Corolla Engine Gasket Set (2018-22)', cat:'Engine', margin:22, unit:'SET', hsn:'84099900', moq:1, active:true, updatedAt:'2026-03-11',
+      vendors:[{name:'Shree Ram Auto Delhi',price:18.50,currency:'USD',lead:7},{name:'Kumar Distributors Mumbai',price:21.00,currency:'USD',lead:5},{name:'Osaka Parts Corp Japan',price:24.50,currency:'USD',lead:14}],
+      priceHistory:[18.2,18.5,18.5,18.0,18.5,18.5,18.5] },
+    { id:'P002', no:'TY-BRK-0098', desc:'Toyota Camry Brake Pad Set Front (2019-23)', cat:'Brakes', margin:20, unit:'SET', hsn:'87083000', moq:1, active:true, updatedAt:'2026-03-11',
+      vendors:[{name:'Kumar Distributors Mumbai',price:12.00,currency:'USD',lead:5},{name:'Shree Ram Auto Delhi',price:13.50,currency:'USD',lead:7}],
+      priceHistory:[12.5,12.5,12.0,12.0,12.0,12.0,12.0] },
+    { id:'P003', no:'TY-BRK-0099', desc:'Toyota Camry Brake Pad Set Rear (2019-23)', cat:'Brakes', margin:20, unit:'SET', hsn:'87083000', moq:1, active:true, updatedAt:'2026-03-10',
+      vendors:[{name:'Kumar Distributors Mumbai',price:11.50,currency:'USD',lead:5}],
+      priceHistory:[11.5,11.5,11.5,11.5,11.5,11.5,11.5] },
+    { id:'P004', no:'HN-SUS-2241', desc:'Honda Civic Shock Absorber Rear (2017-22)', cat:'Suspension', margin:25, unit:'PCS', hsn:'87088000', moq:1, active:true, updatedAt:'2026-03-11',
+      vendors:[{name:'Osaka Parts Corp Japan',price:42.00,currency:'USD',lead:14},{name:'Zhengzhou Auto China',price:28.00,currency:'USD',lead:10}],
+      priceHistory:[28,28,30,28,28,28,28] },
+    { id:'P005', no:'TY-FLT-1122', desc:'Toyota Oil Filter Universal (All Models)', cat:'Filters', margin:30, unit:'PCS', hsn:'84212300', moq:10, active:true, updatedAt:'2026-03-11',
+      vendors:[{name:'Shree Ram Auto Delhi',price:4.50,currency:'USD',lead:7},{name:'Kumar Distributors Mumbai',price:4.33,currency:'USD',lead:5}],
+      priceHistory:[3.8,3.8,3.8,4.0,4.0,4.2,4.33] },
+    { id:'P006', no:'NI-ENG-8801', desc:'Nissan Patrol Timing Belt Kit (VK56)', cat:'Engine', margin:20, unit:'KIT', hsn:'84099900', moq:1, active:true, updatedAt:'2026-03-08',
+      vendors:[{name:'Osaka Parts Corp Japan',price:68.00,currency:'USD',lead:14},{name:'Kumar Distributors Mumbai',price:74.00,currency:'USD',lead:7}],
+      priceHistory:[68,68,65,68,70,68,68] },
+    { id:'P007', no:'MI-ELC-3390', desc:'Mitsubishi Alternator 12V 90A', cat:'Electrical', margin:22, unit:'PCS', hsn:'85114000', moq:1, active:true, updatedAt:'2026-03-09',
+      vendors:[{name:'Zhengzhou Auto China',price:55.00,currency:'USD',lead:10},{name:'Osaka Parts Corp Japan',price:72.00,currency:'USD',lead:14}],
+      priceHistory:[55,55,52,55,55,55,55] },
+    { id:'P008', no:'TY-ENG-5544', desc:'Toyota Land Cruiser Water Pump (1HZ)', cat:'Engine', margin:18, unit:'PCS', hsn:'84138200', moq:1, active:true, updatedAt:'2026-03-11',
+      vendors:[{name:'Shree Ram Auto Delhi',price:38.00,currency:'USD',lead:7}],
+      priceHistory:[38,38,38,36,38,38,38] },
+    { id:'P009', no:'HN-FLT-0023', desc:'Honda Accord Air Filter (2016-21)', cat:'Filters', margin:28, unit:'PCS', hsn:'84212300', moq:5, active:true, updatedAt:'2026-03-11',
+      vendors:[{name:'Shree Ram Auto Delhi',price:7.22,currency:'USD',lead:7}],
+      priceHistory:[6.5,6.5,6.5,7.0,7.0,7.2,7.22] },
+    { id:'P010', no:'SZ-SUS-7710', desc:'Suzuki Swift Ball Joint Front Lower', cat:'Suspension', margin:24, unit:'PCS', hsn:'87088000', moq:2, active:true, updatedAt:'2026-03-10',
+      vendors:[{name:'Kumar Distributors Mumbai',price:14.00,currency:'USD',lead:5}],
+      priceHistory:[14,14,13,14,14,14,14] },
+  ],
+  vendors: [
+    { id:'V001', name:'Shree Ram Auto Parts', location:'Delhi, India', type:'website', url:'https://shreeram.example.com/prices', email:'prices@shreeram.com', lead:7, status:'active', partsCount:142, lastUpdate:'2026-03-11' },
+    { id:'V002', name:'Kumar Distributors', location:'Mumbai, India', type:'email', url:'', email:'rates@kumardist.com', lead:5, status:'review', partsCount:89, lastUpdate:'2026-03-11' },
+    { id:'V003', name:'Osaka Parts Corp', location:'Osaka, Japan', type:'website', url:'https://osaka-parts.example.jp', email:'export@osaka.jp', lead:14, status:'active', partsCount:210, lastUpdate:'2026-03-11' },
+    { id:'V004', name:'Zhengzhou Auto', location:'Zhengzhou, China', type:'upload', url:'', email:'sales@zhengzhou.cn', lead:10, status:'pending', partsCount:67, lastUpdate:'2026-03-08' },
+    { id:'V005', name:'Chennai Auto Traders', location:'Chennai, India', type:'email', url:'', email:'info@chennaiauto.com', lead:6, status:'active', partsCount:54, lastUpdate:'2026-03-10' },
+  ],
+  clients: [
+    { id:'C001', company:'Al-Futtaim Trading LLC', country:'🇦🇪 UAE', contact:'Ahmed Al-Rashid', email:'ahmed@alfuttaim.ae', phone:'+971-50-1234567', currency:'USD', discount:5, terms:'50% Advance, 50% Before Shipment', totalOrders:12, totalValue:48200 },
+    { id:'C002', company:'Gulf Motors LLC', country:'🇸🇦 Saudi Arabia', contact:'Mohammed Al-Zahrani', email:'mgulf@gulfmotors.sa', phone:'+966-55-9876543', currency:'USD', discount:8, terms:'Letter of Credit (LC)', totalOrders:8, totalValue:72100 },
+    { id:'C003', company:'Lagos Auto Supplies Ltd', country:'🇳🇬 Nigeria', contact:'Chukwu Emmanuel', email:'info@lagosauto.ng', phone:'+234-803-456789', currency:'USD', discount:0, terms:'100% Advance', totalOrders:5, totalValue:18500 },
+    { id:'C004', company:'Nairobi Parts Hub', country:'🇰🇪 Kenya', contact:'James Kamau', email:'james@nairobiparts.co.ke', phone:'+254-722-345678', currency:'USD', discount:0, terms:'50% Advance, 50% Before Shipment', totalOrders:3, totalValue:6400 },
+    { id:'C005', company:'Cairo Auto Trading Co.', country:'🇪🇬 Egypt', contact:'Hany Ibrahim', email:'hany@cairoauto.eg', phone:'+20-100-2345678', currency:'USD', discount:3, terms:'Letter of Credit (LC)', totalOrders:2, totalValue:3200 },
+  ],
+  quotations: [
+    { id:'Q001', no:'Q-2024-087', clientId:'C002', clientName:'Gulf Motors LLC', country:'🇸🇦 Saudi Arabia', email:'mgulf@gulfmotors.sa', currency:'USD', terms:'Letter of Credit (LC)', validity:30, remarks:'Bulk order Q1', status:'Won', date:'2026-03-08', shipping:250, overallDisc:5,
+      items:[{no:'NI-ENG-8801',desc:'Nissan Patrol Timing Belt Kit',qty:10,price:68,margin:25,disc:0},{no:'TY-ENG-4512',desc:'Toyota Gasket Set',qty:20,price:18.5,margin:25,disc:0},{no:'MI-ELC-3390',desc:'Mitsubishi Alternator',qty:5,price:55,margin:25,disc:5}] },
+    { id:'Q002', no:'Q-2024-088', clientId:'C003', clientName:'Lagos Auto Supplies Ltd', country:'🇳🇬 Nigeria', email:'info@lagosauto.ng', currency:'USD', terms:'100% Advance', validity:30, remarks:'', status:'Sent', date:'2026-03-10', shipping:250, overallDisc:0,
+      items:[{no:'TY-BRK-0098',desc:'Brake Pad Set Front',qty:10,price:12,margin:18,disc:0},{no:'TY-BRK-0099',desc:'Brake Pad Set Rear',qty:10,price:11.5,margin:18,disc:0},{no:'TY-FLT-1122',desc:'Oil Filter',qty:50,price:4.33,margin:18,disc:0}] },
+    { id:'Q003', no:'Q-2024-089', clientId:'C001', clientName:'Al-Futtaim Trading LLC', country:'🇦🇪 UAE', email:'ahmed@alfuttaim.ae', currency:'USD', terms:'50% Advance, 50% Before Shipment', validity:30, remarks:'Urgent — ship before 25 Mar', status:'Sent', date:'2026-03-11', shipping:250, overallDisc:0,
+      items:[{no:'TY-ENG-4512',desc:'Toyota Gasket Set',qty:5,price:18.5,margin:22,disc:0},{no:'TY-BRK-0098',desc:'Brake Pad Set',qty:10,price:12,margin:20,disc:5},{no:'HN-SUS-2241',desc:'Shock Absorber',qty:4,price:28,margin:25,disc:0}] },
+  ],
+  priceApprovals: [
+    { id:'PA001', partId:'P005', partNo:'TY-FLT-1122', desc:'Toyota Oil Filter Universal', vendor:'Kumar Distributors Mumbai', oldPrice:3.80, newPrice:4.33, source:'email', affectedQuotes:2, date:'2026-03-11' },
+    { id:'PA002', partId:'P009', partNo:'HN-FLT-0023', desc:'Honda Accord Air Filter', vendor:'Shree Ram Auto Delhi', oldPrice:6.50, newPrice:7.22, source:'scraper', affectedQuotes:1, date:'2026-03-11' },
+  ],
+  uploadHistory: [
+    { file:'kumar_mar11.xlsx', vendor:'Kumar Distributors', parts:47, date:'2026-03-11' },
+    { file:'prices_week10.csv', vendor:'Shree Ram Auto', parts:32, date:'2026-03-09' },
+    { file:'osaka_feb_list.xlsx', vendor:'Osaka Parts Corp', parts:28, date:'2026-03-04' },
+  ],
+  quoteCounter: 90,
+  pipelineStats: { scraperDone:8, scraperTotal:12, emailDone:3, emailTotal:9, uploadDone:2, uploadTotal:11 },
+};
+
+let DB = {};
+let editingPartId = null;
+let editingVendorId = null;
+let editingClientId = null;
+let currentQuoteItems = [];
+let selectedPartForQuote = null;
+let selectedVendorPrice = 0;
+let confirmCallback = null;
+
+// ═══════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════
+function loadDB() {
+  try {
+    const saved = localStorage.getItem(DB_KEY);
+    DB = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultDB));
+    if (!DB.settings) DB.settings = defaultDB.settings;
+    if (!DB.priceApprovals) DB.priceApprovals = defaultDB.priceApprovals;
+    if (!DB.pipelineStats) DB.pipelineStats = defaultDB.pipelineStats;
+    if (!DB.uploadHistory) DB.uploadHistory = defaultDB.uploadHistory;
+  } catch(e) {
+    DB = JSON.parse(JSON.stringify(defaultDB));
+  }
+}
+function saveDB() {
+  try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(e) { toast('Storage error — data may not be saved', 'error'); }
+}
+
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+const PAGE_TITLES = {
+  'dashboard':'Dashboard','new-quote':'New Quotation','quotes':'All Quotations',
+  'pipeline':'Price Pipeline','upload':'Upload Prices','parts':'Parts Catalog',
+  'vendors':'Vendors','clients':'Clients','settings':'Settings'
+};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (!page) return;
+  page.classList.add('active');
+  const navBtn = document.querySelector(`.nav-item[data-page="${id}"]`);
+  if (navBtn) navBtn.classList.add('active');
+  document.getElementById('page-heading').textContent = PAGE_TITLES[id] || id;
+  // Page-specific renders
+  const renders = {
+    'dashboard': renderDashboard,
+    'quotes': renderQuotesList,
+    'pipeline': renderPipeline,
+    'parts': () => renderPartsCatalog(DB.parts),
+    'vendors': renderVendors,
+    'clients': renderClients,
+    'settings': loadSettings,
+    'new-quote': initNewQuote,
+    'upload': renderUploadHistory,
+  };
+  if (renders[id]) renders[id]();
+}
+
+// ═══════════════════════════════════
+// TOAST
+// ═══════════════════════════════════
+function toast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast t-${type}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+// ═══════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
+
+// ═══════════════════════════════════
+// CONFIRM DIALOG
+// ═══════════════════════════════════
+function confirm(title, text, cb, icon='⚠️') {
+  document.getElementById('confirm-icon').textContent = icon;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  confirmCallback = cb;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function confirmOk() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if (confirmCallback) confirmCallback();
+  confirmCallback = null;
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  confirmCallback = null;
+}
+
+// ═══════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════
+function fmtMoney(n, sym='$') { return sym + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function genId(prefix) { return prefix + Date.now().toString(36).toUpperCase(); }
+function bestPrice(part) { return Math.min(...part.vendors.map(v => v.price)); }
+function calcLineTotal(item) {
+  const sell = item.price * (1 + item.margin / 100);
+  return sell * (1 - item.disc / 100) * item.qty;
+}
+function calcQuoteSub(items) { return items.reduce((s, i) => s + calcLineTotal(i), 0); }
+function calcQuoteAvgMargin(items) {
+  if (!items.length) return 0;
+  return Math.round(items.reduce((s,i) => s + i.margin, 0) / items.length);
+}
+function calcQuoteGrand(q) {
+  const sub = calcQuoteSub(q.items);
+  const afterDisc = sub * (1 - (q.overallDisc || 0) / 100);
+  return afterDisc + (q.shipping || 0);
+}
+function statusBadge(s) {
+  const m = {Draft:'b-gray',Sent:'b-blue',Won:'b-green',Lost:'b-red',Pending:'b-gold'};
+  return `<span class="badge ${m[s]||'b-gray'}">${s}</span>`;
+}
+function sourceLabel(src) {
+  if (src === 'scraper') return '<span class="badge b-green">🌐 Scraper</span>';
+  if (src === 'email') return '<span class="badge b-blue">📧 Email</span>';
+  return '<span class="badge b-gold">📱 Upload</span>';
+}
+function vendorTypeBadge(t) {
+  if (t === 'website') return '<span class="badge b-green">🌐 Website</span>';
+  if (t === 'email') return '<span class="badge b-blue">📧 Email</span>';
+  return '<span class="badge b-gold">📱 Upload</span>';
+}
+
+// ═══════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════
+function renderDashboard() {
+  // Alerts
+  const alertsEl = document.getElementById('dash-alerts');
+  const pending = DB.priceApprovals.length;
+  alertsEl.innerHTML = pending > 0 ? `
+    <div class="alert alert-gold mb3">
+      <div class="alert-icon">⚠️</div>
+      <div>
+        <div class="alert-title">${pending} Price Alert${pending>1?'s':''} — Review Required</div>
+        <div class="alert-text">New prices received — some changes >10%. Pending quotes ka margin affected ho sakta hai. 
+          <a href="#" onclick="showPage('pipeline');return false" style="color:var(--gold);text-decoration:underline">Pipeline check karo →</a></div>
+      </div>
+    </div>` : '';
+
+  // Stats
+  const won = DB.quotations.filter(q => q.status === 'Won');
+  const pending_q = DB.quotations.filter(q => q.status === 'Sent');
+  const totalRev = won.reduce((s, q) => s + calcQuoteGrand(q), 0);
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card sc-gold"><div class="stat-label">Total Quotations</div><div class="stat-val">${DB.quotations.length}</div><div class="stat-change up">↑ Active system</div></div>
+    <div class="stat-card sc-green"><div class="stat-label">Won Orders</div><div class="stat-val text-green">${won.length}</div><div class="stat-change up text-green">✓ Confirmed</div></div>
+    <div class="stat-card sc-blue"><div class="stat-label">Revenue (USD)</div><div class="stat-val">${fmtMoney(totalRev)}</div><div class="stat-change up">From won orders</div></div>
+    <div class="stat-card sc-purple"><div class="stat-label">Pending Response</div><div class="stat-val" style="color:#c4b5fd">${pending_q.length}</div><div class="stat-change text-muted">Awaiting buyers</div></div>`;
+
+  // Recent quotes
+  const recent = [...DB.quotations].reverse().slice(0, 5);
+  document.getElementById('dash-recent-quotes').innerHTML = recent.length ? recent.map(q => `
+    <tr>
+      <td class="mono text-gold">${q.no}</td>
+      <td>${q.clientName}</td>
+      <td class="mono">${fmtMoney(calcQuoteGrand(q))}</td>
+      <td class="text-green">${calcQuoteAvgMargin(q.items)}%</td>
+      <td>${statusBadge(q.status)}</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="previewQuotePDF('${q.id}')">PDF</button></td>
+    </tr>`) .join('') : '<tr><td colspan="6" class="empty-state" style="padding:24px;text-align:center;color:var(--muted2)">No quotations yet</td></tr>';
+
+  // Price feed
+  const feed = [
+    {icon:'🌐',text:'Shree Ram Auto — 142 parts updated',time:'9:04 AM',color:'var(--green3)'},
+    {icon:'📧',text:'Kumar Dist. email parsed — 89 parts',time:'9:12 AM',color:'var(--blue3)'},
+    {icon:'⚠️',text:'TY-FLT-1122 price +14% — review needed',time:'9:12 AM',color:'var(--gold2)'},
+    {icon:'🌐',text:'Osaka Parts Corp — 210 parts updated',time:'9:18 AM',color:'var(--green3)'},
+    {icon:'⚠️',text:'HN-FLT-0023 price +11% — review needed',time:'9:18 AM',color:'var(--gold2)'},
+  ];
+  document.getElementById('price-feed-list').innerHTML = feed.map(f => `
+    <div style="display:flex;gap:9px;padding:8px 0;border-bottom:1px solid rgba(30,45,71,.4)">
+      <span style="font-size:14px;flex-shrink:0">${f.icon}</span>
+      <div>
+        <div style="font-size:11.5px;color:${f.color}">${f.text}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:1px">${f.time}</div>
+      </div>
+    </div>`).join('');
+
+  // Pipeline badges
+  const ps = DB.pipelineStats;
+  document.getElementById('pipeline-badges').innerHTML = `
+    <span class="badge b-green">${ps.scraperDone} auto-updated</span>
+    <span class="badge b-gold">${pending} pending review</span>`;
+
+  // Pipeline summary
+  document.getElementById('pipeline-summary').innerHTML = `
+    <div style="background:var(--s2);border-radius:9px;padding:14px;border:1px solid rgba(16,185,129,.2)">
+      <div style="font-size:11px;color:var(--green3);font-weight:700;margin-bottom:6px">🌐 Website Scrapers</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--green3)">${ps.scraperDone}/${ps.scraperTotal}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">vendors updated today</div>
+      <div class="prog-bar mt1"><div class="prog-fill" style="background:linear-gradient(90deg,var(--green),var(--green2));width:${Math.round(ps.scraperDone/ps.scraperTotal*100)}%"></div></div>
+    </div>
+    <div style="background:var(--s2);border-radius:9px;padding:14px;border:1px solid rgba(59,130,246,.2)">
+      <div style="font-size:11px;color:var(--blue3);font-weight:700;margin-bottom:6px">📧 Email Parser</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--blue3)">${ps.emailDone}/${ps.emailTotal}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">emails processed</div>
+      <div class="prog-bar mt1"><div class="prog-fill" style="background:linear-gradient(90deg,var(--blue),var(--blue2));width:${Math.round(ps.emailDone/ps.emailTotal*100)}%"></div></div>
+    </div>
+    <div style="background:var(--s2);border-radius:9px;padding:14px;border:1px solid rgba(245,158,11,.2)">
+      <div style="font-size:11px;color:var(--gold2);font-weight:700;margin-bottom:6px">📱 Manual Upload</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--gold2)">${ps.uploadDone}/${ps.uploadTotal}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">uploads this week</div>
+      <div class="prog-bar mt1"><div class="prog-fill" style="background:linear-gradient(90deg,var(--gold),var(--gold2));width:${Math.round(ps.uploadDone/ps.uploadTotal*100)}%"></div></div>
+    </div>`;
+
+  // Update nav badge
+  document.getElementById('nb-quotes').textContent = DB.quotations.filter(q=>q.status==='Sent').length || '';
+  const alertCount = DB.priceApprovals.length;
+  const nb = document.getElementById('nb-alerts');
+  const nd = document.getElementById('notif-dot');
+  if (alertCount > 0) { nb.style.display=''; nd.style.display=''; } else { nb.style.display='none'; nd.style.display='none'; }
+}
+
+// ═══════════════════════════════════
+// NEW QUOTATION
+// ═══════════════════════════════════
+function initNewQuote() {
+  currentQuoteItems = [];
+  DB.quoteCounter = (DB.quoteCounter || 89) + 1;
+  const no = DB.settings.quotePrefix + String(DB.quoteCounter).padStart(3,'0');
+  document.getElementById('new-quote-num').textContent = no;
+  // Populate clients
+  const sel = document.getElementById('q-client');
+  sel.innerHTML = '<option value="">— Select Client —</option>' +
+    DB.clients.map(c => `<option value="${c.id}">${c.company}</option>`).join('');
+  // Reset form
+  ['q-country','q-email'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('q-remarks').value = '';
+  document.getElementById('t-disc').value = '0';
+  renderQBRows();
+}
+
+function onClientChange() {
+  const id = document.getElementById('q-client').value;
+  const client = DB.clients.find(c => c.id === id);
+  if (!client) return;
+  document.getElementById('q-country').value = client.country;
+  document.getElementById('q-email').value = client.email;
+  const curr = document.getElementById('q-currency');
+  curr.value = client.currency || 'USD';
+  const terms = document.getElementById('q-terms');
+  [...terms.options].forEach(o => { if (o.text === client.terms) o.selected = true; });
+}
+
+function renderQBRows() {
+  const container = document.getElementById('qb-rows-container');
+  if (!currentQuoteItems.length) {
+    container.innerHTML = `<div class="empty-state" style="padding:28px 16px"><div class="es-icon" style="font-size:28px">📦</div><p>Koi part nahi — "+ Add Part" click karo</p></div>`;
+    recalcTotals(); return;
+  }
+  container.innerHTML = currentQuoteItems.map((item, i) => `
+    <div class="qb-row">
+      <div>
+        <input class="inp" value="${item.no}" placeholder="Part No." style="font-family:'JetBrains Mono',monospace;font-size:11px;margin-bottom:3px" onchange="currentQuoteItems[${i}].no=this.value">
+        <input class="inp" value="${item.desc}" placeholder="Description" style="font-size:11px;color:var(--muted2)" onchange="currentQuoteItems[${i}].desc=this.value">
+      </div>
+      <input class="inp" type="number" value="${item.qty}" min="1" onchange="currentQuoteItems[${i}].qty=+this.value||1;recalcTotals();rerenderLine(${i})">
+      <input class="inp" type="number" value="${item.price}" step="0.01" onchange="currentQuoteItems[${i}].price=+this.value||0;recalcTotals();rerenderLine(${i})">
+      <input class="inp" type="number" value="${item.margin}" onchange="currentQuoteItems[${i}].margin=+this.value||0;recalcTotals();rerenderLine(${i})">
+      <input class="inp" type="number" value="${item.disc}" onchange="currentQuoteItems[${i}].disc=+this.value||0;recalcTotals();rerenderLine(${i})">
+      <span class="mono text-gold" style="font-size:12.5px;font-weight:700" id="lt-${i}">${fmtMoney(calcLineTotal(item))}</span>
+      <button class="del-btn" onclick="removeQBRow(${i})">×</button>
+    </div>`).join('');
+  recalcTotals();
+}
+
+function rerenderLine(i) {
+  const el = document.getElementById('lt-' + i);
+  if (el) el.textContent = fmtMoney(calcLineTotal(currentQuoteItems[i]));
+}
+
+function removeQBRow(i) { currentQuoteItems.splice(i, 1); renderQBRows(); }
+function addEmptyRow() { currentQuoteItems.push({no:'',desc:'',qty:1,price:0,margin:DB.settings.defaultMargin,disc:0}); renderQBRows(); }
+
+function recalcTotals() {
+  const sub = calcQuoteSub(currentQuoteItems);
+  const od = +(document.getElementById('t-disc')?.value || 0);
+  const afterDisc = sub * (1 - od / 100);
+  const ship = +(DB.settings.shipping || 250);
+  const grand = afterDisc + ship;
+  document.getElementById('t-sub').textContent = fmtMoney(sub);
+  document.getElementById('t-after').textContent = fmtMoney(afterDisc);
+  document.getElementById('t-ship').textContent = fmtMoney(ship);
+  document.getElementById('t-grand').textContent = fmtMoney(grand);
+}
+
+// ═══════════════════════════════════
+// PART MODAL (Add to Quote)
+// ═══════════════════════════════════
+function openPartModal() {
+  selectedPartForQuote = null; selectedVendorPrice = 0;
+  document.getElementById('part-search-inp').value = '';
+  document.getElementById('vendor-selection-section').style.display = 'none';
+  searchPartsInModal('');
+  openModal('modal-add-part');
+  setTimeout(() => document.getElementById('part-search-inp').focus(), 100);
+}
+
+function searchPartsInModal(q) {
+  const list = q ? DB.parts.filter(p => p.no.toLowerCase().includes(q.toLowerCase()) || p.desc.toLowerCase().includes(q.toLowerCase())) : DB.parts;
+  document.getElementById('part-search-results').innerHTML = list.length ? list.map(p => `
+    <div onclick="selectPartForModal('${p.id}')" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all .15s"
+         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div class="flex jb aic">
+        <span class="mono text-gold" style="font-size:11.5px">${p.no}</span>
+        <span class="badge b-blue" style="font-size:9px">${p.cat}</span>
+      </div>
+      <div style="font-size:12px;margin-top:2px">${p.desc}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">Best: ${fmtMoney(bestPrice(p))} · ${p.vendors.length} vendor(s)</div>
+    </div>`).join('') : `<div class="empty-state" style="padding:24px"><p>No parts found for "${q}"</p></div>`;
+}
+
+function selectPartForModal(partId) {
+  selectedPartForQuote = DB.parts.find(p => p.id === partId);
+  if (!selectedPartForQuote) return;
+  document.getElementById('part-search-results').innerHTML = `
+    <div style="padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:rgba(245,158,11,.06)">
+      <span class="mono text-gold" style="font-size:12px">${selectedPartForQuote.no}</span> — ${selectedPartForQuote.desc}
+    </div>`;
+  document.getElementById('m-margin').value = selectedPartForQuote.margin;
+  document.getElementById('m-qty').value = 1;
+  document.getElementById('m-disc').value = 0;
+  const best = bestPrice(selectedPartForQuote);
+  selectedVendorPrice = selectedPartForQuote.vendors[0].price;
+  document.getElementById('vc-options-container').innerHTML = selectedPartForQuote.vendors.map((v, i) => `
+    <div class="vc-card ${v.price === best ? 'best' : ''} ${i === 0 ? 'sel' : ''}" onclick="pickVendor(this, ${v.price})">
+      <div class="vc-name">${v.name}</div>
+      <div class="vc-price">${fmtMoney(v.price)}</div>
+      <div class="vc-meta">Lead: ${v.lead} days</div>
+      ${v.price === best ? '<div class="vc-best-tag">Lowest ✓</div>' : ''}
+    </div>`).join('');
+  document.getElementById('vendor-selection-section').style.display = 'block';
+  calcModalLine();
+}
+
+function pickVendor(el, price) {
+  document.querySelectorAll('.vc-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedVendorPrice = price;
+  calcModalLine();
+}
+
+function calcModalLine() {
+  if (!selectedVendorPrice) return;
+  const qty = +(document.getElementById('m-qty').value) || 1;
+  const margin = +(document.getElementById('m-margin').value) || 0;
+  const disc = +(document.getElementById('m-disc').value) || 0;
+  const total = selectedVendorPrice * (1 + margin / 100) * (1 - disc / 100) * qty;
+  document.getElementById('modal-line-total').textContent = fmtMoney(total);
+}
+
+function confirmAddPartToQuote() {
+  if (!selectedPartForQuote) { toast('Pehle part select karo', 'error'); return; }
+  const qty = +(document.getElementById('m-qty').value) || 1;
+  const margin = +(document.getElementById('m-margin').value) || 20;
+  const disc = +(document.getElementById('m-disc').value) || 0;
+  currentQuoteItems.push({ no: selectedPartForQuote.no, desc: selectedPartForQuote.desc, qty, price: selectedVendorPrice, margin, disc });
+  renderQBRows();
+  closeModal('modal-add-part');
+  toast('Part added ✓');
+  selectedPartForQuote = null; selectedVendorPrice = 0;
+}
+
+// ═══════════════════════════════════
+// BULK ADD
+// ═══════════════════════════════════
+function openBulkAddModal() { openModal('modal-bulk-add'); }
+function doBulkAdd() {
+  const lines = document.getElementById('bulk-parts-input').value.trim().split('\n').filter(Boolean);
+  let added = 0, notFound = [];
+  lines.forEach(line => {
+    const [rawNo, rawQty] = line.split(',').map(s => s.trim());
+    const part = DB.parts.find(p => p.no.toLowerCase() === rawNo.toLowerCase());
+    if (part) {
+      const qty = parseInt(rawQty) || 1;
+      const bp = bestPrice(part);
+      currentQuoteItems.push({ no: part.no, desc: part.desc, qty, price: bp, margin: part.margin, disc: 0 });
+      added++;
+    } else { notFound.push(rawNo); }
+  });
+  renderQBRows();
+  closeModal('modal-bulk-add');
+  if (added) toast(`${added} part${added>1?'s':''} added ✓`);
+  if (notFound.length) toast(`Not found: ${notFound.join(', ')}`, 'warn');
+}
+
+// ═══════════════════════════════════
+// SAVE QUOTE
+// ═══════════════════════════════════
+function saveQuote() {
+  const clientId = document.getElementById('q-client').value;
+  if (!clientId) { toast('Client select karo', 'error'); return; }
+  if (!currentQuoteItems.length) { toast('Koi part nahi add kiya', 'error'); return; }
+  const client = DB.clients.find(c => c.id === clientId);
+  const no = document.getElementById('new-quote-num').textContent;
+  const q = {
+    id: genId('Q'),
+    no,
+    clientId,
+    clientName: client.company,
+    country: document.getElementById('q-country').value || client.country,
+    email: document.getElementById('q-email').value,
+    currency: document.getElementById('q-currency').value,
+    terms: document.getElementById('q-terms').value,
+    validity: +(document.getElementById('q-validity').value),
+    remarks: document.getElementById('q-remarks').value,
+    status: 'Sent',
+    date: new Date().toISOString().slice(0, 10),
+    shipping: DB.settings.shipping,
+    overallDisc: +(document.getElementById('t-disc').value) || 0,
+    items: JSON.parse(JSON.stringify(currentQuoteItems)),
+  };
+  DB.quotations.push(q);
+  // Update client stats
+  client.totalOrders = (client.totalOrders || 0) + 1;
+  client.totalValue = (client.totalValue || 0) + calcQuoteGrand(q);
+  saveDB();
+  toast(`✓ Quote ${no} saved & marked as Sent!`);
+  currentQuoteItems = [];
+  showPage('quotes');
+}
+
+// ═══════════════════════════════════
+// QUOTES LIST
+// ═══════════════════════════════════
+function renderQuotesList(filter='', statusFilter='') {
+  let list = [...DB.quotations].reverse();
+  if (filter) { const q = filter.toLowerCase(); list = list.filter(item => item.no.toLowerCase().includes(q) || item.clientName.toLowerCase().includes(q)); }
+  if (statusFilter) list = list.filter(item => item.status === statusFilter);
+  document.getElementById('q-count-label').textContent = list.length + ' quotation' + (list.length !== 1 ? 's' : '');
+  const tbody = document.getElementById('quotes-tbody');
+  const empty = document.getElementById('quotes-empty');
+  if (!list.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map(q => {
+    const grand = calcQuoteGrand(q);
+    const margin = calcQuoteAvgMargin(q.items);
+    return `<tr>
+      <td class="mono text-gold">${q.no}</td>
+      <td><strong>${q.clientName}</strong></td>
+      <td>${q.country}</td>
+      <td class="text-muted">${q.items.length}</td>
+      <td class="mono">${fmtMoney(grand)}</td>
+      <td class="text-green">${margin}%</td>
+      <td>${statusBadge(q.status)}</td>
+      <td class="td-sm">${fmtDate(q.date)}</td>
+      <td>
+        <div class="flex gap1">
+          <button class="btn btn-outline btn-xs" onclick="previewQuotePDF('${q.id}')">PDF</button>
+          ${q.status === 'Sent' ? `<button class="btn btn-soft-green btn-xs" onclick="changeQuoteStatus('${q.id}','Won')">Won</button>
+          <button class="btn btn-soft-red btn-xs" onclick="changeQuoteStatus('${q.id}','Lost')">Lost</button>` : ''}
+          <button class="btn btn-ghost btn-xs text-red" onclick="deleteQuote('${q.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterQuotes(val) {
+  const status = document.getElementById('q-status-filter').value;
+  renderQuotesList(val, status);
+}
+function changeQuoteStatus(id, status) {
+  const q = DB.quotations.find(x => x.id === id);
+  if (q) { q.status = status; saveDB(); renderQuotesList(); toast(`Quote marked as ${status} ✓`); }
+}
+function deleteQuote(id) {
+  confirm('Delete Quote?', 'Yeh quote permanently delete ho jayega.', () => {
+    DB.quotations = DB.quotations.filter(q => q.id !== id);
+    saveDB(); renderQuotesList(); toast('Quote deleted', 'error');
+  }, '🗑');
+}
+
+// ═══════════════════════════════════
+// PDF GENERATION
+// ═══════════════════════════════════
+function previewPDF() {
+  if (!currentQuoteItems.length) {
+    toast('Pehle parts add karo', 'warn'); return;
+  }
+  const clientId = document.getElementById('q-client').value;
+  const client = DB.clients.find(c => c.id === clientId);
+  const q = {
+    no: document.getElementById('new-quote-num').textContent,
+    clientName: client ? client.company : document.getElementById('q-country').value || 'Client',
+    country: document.getElementById('q-country').value,
+    email: document.getElementById('q-email').value,
+    currency: document.getElementById('q-currency').value,
+    terms: document.getElementById('q-terms').value,
+    validity: document.getElementById('q-validity').value,
+    remarks: document.getElementById('q-remarks').value,
+    items: currentQuoteItems,
+    overallDisc: +(document.getElementById('t-disc').value)||0,
+    shipping: DB.settings.shipping,
+    date: new Date().toISOString().slice(0,10),
+  };
+  renderPDFDoc(q);
+}
+function previewQuotePDF(id) {
+  const q = DB.quotations.find(x => x.id === id);
+  if (q) renderPDFDoc(q);
+}
+function renderPDFDoc(q) {
+  const s = DB.settings;
+  const items = q.items;
+  let sub = 0;
+  const rows = items.map((item, i) => {
+    const sell = item.price * (1 + item.margin / 100);
+    const unit = sell * (1 - item.disc / 100);
+    const total = unit * item.qty;
+    sub += total;
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="font-family:monospace;color:#c05000;font-size:10px">${item.no}</td>
+      <td>${item.desc}</td>
+      <td style="text-align:center">${item.qty}</td>
+      <td style="text-align:right">${fmtMoney(item.price)}</td>
+      <td style="text-align:right">${item.margin}%</td>
+      ${item.disc ? `<td style="text-align:right">${item.disc}%</td>` : `<td style="text-align:right;color:#aaa">—</td>`}
+      <td style="text-align:right;font-weight:700">${fmtMoney(total)}</td>
+    </tr>`;
+  }).join('');
+  const afterDisc = sub * (1 - (q.overallDisc||0)/100);
+  const grand = afterDisc + (q.shipping||250);
+  const today = fmtDate(q.date || new Date().toISOString());
+  document.getElementById('pdf-render-zone').innerHTML = `
+    <div class="pdf-doc" id="pdf-printable">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="pdf-co-name">🔧 ${s.companyName}</div>
+          <div class="pdf-tag-line">${s.addr1}${s.addr2?', '+s.addr2:''}<br>${s.phone} · ${s.email}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#f59e0b">QUOTATION</div>
+          <div style="font-size:12px;margin-top:4px"><strong>${q.no}</strong> · ${today}</div>
+          <div style="font-size:11px;color:#888">Valid: ${q.validity||30} days</div>
+        </div>
+      </div>
+      <div class="pdf-divider"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div>
+          <div class="pdf-sec-label">Bill To</div>
+          <div style="font-size:13px"><strong>${q.clientName}</strong></div>
+          <div style="font-size:12px;color:#555">${q.country || ''}</div>
+          ${q.email ? `<div style="font-size:11px;color:#888">${q.email}</div>` : ''}
+        </div>
+        <div>
+          <div class="pdf-sec-label">Payment</div>
+          <div style="font-size:12px">${q.terms||s.paymentTerms}</div>
+          ${q.remarks ? `<div class="pdf-sec-label" style="margin-top:8px">Remarks</div><div style="font-size:11px;color:#666">${q.remarks}</div>` : ''}
+        </div>
+      </div>
+      <div class="pdf-sec-label" style="margin-top:16px">Items</div>
+      <table class="pdf-table">
+        <thead><tr><th>#</th><th>Part No.</th><th>Description</th><th style="text-align:center">Qty</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Margin</th><th style="text-align:right">Disc</th><th style="text-align:right">Total</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px">
+        <div style="width:260px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>Subtotal:</span><span><strong>${fmtMoney(sub)}</strong></span></div>
+          ${q.overallDisc ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>Discount (${q.overallDisc}%):</span><span>-${fmtMoney(sub*(q.overallDisc/100))}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>Shipping:</span><span>${fmtMoney(q.shipping||250)}</span></div>
+          <div style="border-top:2px solid #f59e0b;margin-top:8px;padding-top:10px;display:flex;justify-content:space-between">
+            <span style="font-weight:700;font-size:13px">Grand Total (${q.currency||'USD'}):</span>
+            <span class="pdf-grand-val">${fmtMoney(grand)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="pdf-footer-note">
+        <strong>Terms & Conditions:</strong> ${q.terms||s.paymentTerms}. Prices in ${q.currency||'USD'}. Subject to availability. Quote valid for ${q.validity||30} days.<br>
+        <strong>Bank Details:</strong> ${s.bankName} · A/C: ${s.accNo} · IFSC: ${s.ifsc} · SWIFT: ${s.swift}<br>
+        ${s.gst ? `<strong>GST:</strong> ${s.gst}` : ''}
+      </div>
+    </div>`;
+  openModal('modal-pdf');
+}
+function printQuotation() {
+  const content = document.getElementById('pdf-printable').outerHTML;
+  const w = window.open('','_blank');
+  w.document.write(`<html><head><title>Quotation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+    <style>body{font-family:Outfit,sans-serif;padding:0;margin:0;color:#111}
+    .pdf-doc{padding:32px 36px;max-width:780px;margin:0 auto;font-size:12px}
+    .pdf-co-name{font-family:Syne,sans-serif;font-size:19px;font-weight:800}
+    .pdf-tag-line{font-size:10px;color:#888;margin-top:2px}
+    .pdf-divider{border:none;border-top:3px solid #f59e0b;margin:12px 0}
+    .pdf-sec-label{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:#aaa;font-weight:700;margin:12px 0 4px}
+    .pdf-table{width:100%;border-collapse:collapse;font-size:10px}
+    .pdf-table th,.pdf-table td{padding:6px 8px;border:1px solid #e5e7eb;text-align:left}
+    .pdf-table th{background:#f4f5f7;font-size:9px;color:#666}
+    .pdf-grand-val{font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#f59e0b}
+    .pdf-footer-note{margin-top:16px;padding-top:10px;border-top:1px solid #eee;font-size:9px;color:#999;line-height:1.6}
+    @media print{@page{margin:15mm}body{margin:0}}</style>
+    </head><body>${content}</body></html>`);
+  w.document.close();
+  setTimeout(() => { w.focus(); w.print(); }, 500);
+}
+
+// ═══════════════════════════════════
+// PRICE PIPELINE
+// ═══════════════════════════════════
+function renderPipeline() {
+  const ps = DB.pipelineStats;
+  const animProg = (id, pct) => setTimeout(() => { const el=document.getElementById(id); if(el) el.style.width=pct+'%'; }, 200);
+
+  document.getElementById('scraper-label').textContent = `${ps.scraperDone}/${ps.scraperTotal} vendors`;
+  document.getElementById('scraper-pct').textContent = Math.round(ps.scraperDone/ps.scraperTotal*100)+'%';
+  document.getElementById('email-label').textContent = `${ps.emailDone} emails processed`;
+  document.getElementById('email-pct').textContent = Math.round(ps.emailDone/ps.emailTotal*100)+'%';
+  document.getElementById('upload-label').textContent = `${ps.uploadDone}/${ps.uploadTotal} files`;
+  document.getElementById('upload-pct').textContent = Math.round(ps.uploadDone/ps.uploadTotal*100)+'%';
+  animProg('scraper-prog', Math.round(ps.scraperDone/ps.scraperTotal*100));
+  animProg('email-prog', Math.round(ps.emailDone/ps.emailTotal*100));
+  animProg('upload-prog', Math.round(ps.uploadDone/ps.uploadTotal*100));
+
+  renderApprovals();
+  renderPriceHistory();
+}
+
+function renderApprovals() {
+  const list = DB.priceApprovals;
+  document.getElementById('approval-count').textContent = list.length;
+  const empty = document.getElementById('approval-empty');
+  const tbody = document.getElementById('approval-tbody');
+  if (!list.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map(pa => {
+    const chg = ((pa.newPrice - pa.oldPrice) / pa.oldPrice * 100).toFixed(1);
+    return `<tr id="pa-row-${pa.id}">
+      <td class="mono text-gold">${pa.partNo}</td>
+      <td style="max-width:200px;truncate">${pa.desc}</td>
+      <td class="td-sm">${pa.vendor}</td>
+      <td class="mono">${fmtMoney(pa.oldPrice)}</td>
+      <td class="mono text-red">${fmtMoney(pa.newPrice)}</td>
+      <td><span class="badge b-red">${chg>0?'+':''}${chg}% ⬆</span></td>
+      <td>${sourceLabel(pa.source)}</td>
+      <td><span class="badge b-gold">${pa.affectedQuotes} quote${pa.affectedQuotes!==1?'s':''}</span></td>
+      <td>
+        <div class="flex gap1">
+          <button class="btn btn-soft-green btn-xs" onclick="approvePrice('${pa.id}')">✓</button>
+          <button class="btn btn-soft-red btn-xs" onclick="rejectPrice('${pa.id}')">✗</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function approvePrice(id) {
+  const pa = DB.priceApprovals.find(x => x.id === id);
+  if (pa) {
+    const part = DB.parts.find(p => p.id === pa.partId);
+    if (part) {
+      const vendor = part.vendors.find(v => v.name === pa.vendor);
+      if (vendor) vendor.price = pa.newPrice;
+      part.updatedAt = new Date().toISOString().slice(0,10);
+    }
+    DB.priceApprovals = DB.priceApprovals.filter(x => x.id !== id);
+    saveDB(); renderApprovals();
+    toast(`✓ ${pa.partNo} price updated to ${fmtMoney(pa.newPrice)}`);
+  }
+}
+function rejectPrice(id) {
+  DB.priceApprovals = DB.priceApprovals.filter(x => x.id !== id);
+  saveDB(); renderApprovals();
+  toast('Price update rejected', 'warn');
+}
+function approveAllPrices() {
+  confirm('Approve All Prices?', `${DB.priceApprovals.length} price updates database mein save ho jayengi.`, () => {
+    DB.priceApprovals.forEach(pa => {
+      const part = DB.parts.find(p => p.id === pa.partId);
+      if (part) {
+        const vendor = part.vendors.find(v => v.name === pa.vendor);
+        if (vendor) vendor.price = pa.newPrice;
+        part.updatedAt = new Date().toISOString().slice(0,10);
+      }
+    });
+    DB.priceApprovals = [];
+    saveDB(); renderApprovals();
+    toast('✓ All prices approved & updated!');
+  }, '✓');
+}
+function exportPriceChanges() {
+  const csv = ['Part No,Description,Vendor,Old Price,New Price,Change%,Source',
+    ...DB.priceApprovals.map(pa => `${pa.partNo},"${pa.desc}","${pa.vendor}",${pa.oldPrice},${pa.newPrice},${((pa.newPrice-pa.oldPrice)/pa.oldPrice*100).toFixed(1)},${pa.source}`)
+  ].join('\n');
+  downloadText(csv, 'price_changes.csv', 'text/csv');
+}
+function renderPriceHistory() {
+  const parts = DB.parts.filter(p => p.priceHistory && p.priceHistory.length > 1).slice(0, 8);
+  document.getElementById('price-history-tbody').innerHTML = parts.map(p => {
+    const h = p.priceHistory; const mn = Math.min(...h); const mx = Math.max(...h); const cur = h[h.length-1];
+    const chg = ((cur - h[0]) / h[0] * 100).toFixed(1);
+    const bars = h.map(v => { const ht = Math.round(((v-mn)/(mx-mn||1))*24)+6; return `<div class="spark-b" style="height:${ht}px;background:${+chg>0?'var(--red3)':'var(--green3)'}"></div>`; }).join('');
+    return `<tr>
+      <td class="mono text-gold">${p.no}</td>
+      <td style="font-size:11px;max-width:200px">${p.desc}</td>
+      <td><div class="sparkline">${bars}</div></td>
+      <td class="mono">${fmtMoney(mn)}</td>
+      <td class="mono">${fmtMoney(mx)}</td>
+      <td class="mono bold">${fmtMoney(cur)}</td>
+      <td><span class="badge ${+chg>0?'b-red':'b-green'}">${+chg>0?'▲':'▼'}${Math.abs(chg)}%</span></td>
+    </tr>`;
+  }).join('');
+}
+function runScraper() {
+  toast('🌐 Web scrapers running... checking 12 vendors...', 'info');
+  setTimeout(() => {
+    DB.pipelineStats.scraperDone = Math.min(DB.pipelineStats.scraperTotal, DB.pipelineStats.scraperDone + 2);
+    saveDB(); renderPipeline();
+    toast('✓ Scrapers done — 2 new price changes found', 'warn');
+  }, 2500);
+}
+function checkEmails() {
+  toast('📧 Checking Gmail inbox...', 'info');
+  setTimeout(() => {
+    DB.pipelineStats.emailDone = Math.min(DB.pipelineStats.emailTotal, DB.pipelineStats.emailDone + 1);
+    saveDB(); renderPipeline();
+    toast('✓ 1 new vendor email found — prices queued for review');
+  }, 2000);
+}
+
+// ═══════════════════════════════════
+// UPLOAD PRICES
+// ═══════════════════════════════════
+let parsedFileData = [];
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
+}
+function handleFileSelect(file) {
+  if (!file) return;
+  toast(`📂 "${file.name}" parsing...`, 'info');
+  // Simulate CSV/Excel parsing with mock data
+  setTimeout(() => {
+    parsedFileData = [
+      { part_no:'TY-ENG-4512', price:'18.50', description:'Toyota Gasket Set' },
+      { part_no:'TY-BRK-0098', price:'12.00', description:'Brake Pad Front' },
+      { part_no:'HN-SUS-2241', price:'28.00', description:'Shock Absorber' },
+      { part_no:'TY-FLT-1122', price:'4.33', description:'Oil Filter' },
+      { part_no:'NI-ENG-8801', price:'68.00', description:'Timing Belt Kit' },
+      { part_no:'NEW-PART-999', price:'45.00', description:'Unknown Part (Not in catalog)' },
+    ];
+    showFilePreview(parsedFileData, file.name);
+  }, 1000);
+}
+function showFilePreview(data, fname) {
+  document.getElementById('file-preview-card').style.display = '';
+  document.getElementById('file-row-count').textContent = data.length + ' rows detected';
+  const cols = Object.keys(data[0]);
+  const colOpts = cols.map(c => `<option>${c}</option>`).join('');
+  document.getElementById('col-partno').innerHTML = colOpts;
+  document.getElementById('col-price').innerHTML = cols.map((c,i) => `<option ${i===1?'selected':''}>${c}</option>`).join('');
+  document.getElementById('upload-vendor-name').value = fname.split(/[_.-]/)[0].replace(/\d/g,'').trim() || '';
+  const inCatalog = data.filter(r => DB.parts.some(p => p.no === r.part_no));
+  document.getElementById('preview-table-container').innerHTML = `
+    <table>
+      <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}<th>Status</th></tr></thead>
+      <tbody>${data.map(r => {
+        const found = DB.parts.some(p => p.no === r.part_no);
+        return `<tr>${cols.map(c=>`<td class="mono" style="font-size:11px">${r[c]}</td>`).join('')}<td>${found ? '<span class="badge b-green">✓ Match</span>' : '<span class="badge b-red">✗ Unknown</span>'}</td></tr>`;
+      }).join('')}</tbody>
+    </table>
+    <div class="text-sm text-muted mt2">${inCatalog.length}/${data.length} parts matched in catalog</div>`;
+  toast(`✓ File parsed — ${data.length} rows found`, 'success');
+}
+function importUploadedPrices() {
+  const vendor = document.getElementById('upload-vendor-name').value.trim();
+  if (!vendor) { toast('Vendor naam daalo', 'error'); return; }
+  let updated = 0, skipped = 0;
+  parsedFileData.forEach(row => {
+    const part = DB.parts.find(p => p.no === row.part_no);
+    if (part) {
+      const oldV = part.vendors.find(v => v.name === vendor);
+      const newPrice = parseFloat(row.price);
+      if (oldV) {
+        const thresh = DB.settings.alertThreshold || 10;
+        if (Math.abs(newPrice - oldV.price) / oldV.price * 100 > thresh) {
+          DB.priceApprovals.push({ id: genId('PA'), partId: part.id, partNo: part.no, desc: part.desc, vendor, oldPrice: oldV.price, newPrice, source: 'upload', affectedQuotes: 0, date: new Date().toISOString().slice(0,10) });
+        } else { oldV.price = newPrice; }
+      } else {
+        part.vendors.push({ name: vendor, price: newPrice, currency: document.getElementById('upload-currency').value || 'USD', lead: 7 });
+      }
+      updated++;
+    } else { skipped++; }
+  });
+  DB.uploadHistory.unshift({ file: vendor + '_upload.xlsx', vendor, parts: updated, date: new Date().toISOString().slice(0,10) });
+  DB.pipelineStats.uploadDone++;
+  saveDB();
+  document.getElementById('file-preview-card').style.display = 'none';
+  renderUploadHistory();
+  toast(`✓ ${updated} parts updated for "${vendor}"${skipped ? ` · ${skipped} skipped` : ''}`);
+  parsedFileData = [];
+}
+function renderUploadHistory() {
+  document.getElementById('upload-history-tbody').innerHTML = DB.uploadHistory.slice(0,8).map(u => `
+    <tr>
+      <td style="font-size:11px">${u.file}</td>
+      <td style="font-size:11px">${u.vendor}</td>
+      <td class="text-green">${u.parts} ✓</td>
+      <td class="td-sm">${fmtDate(u.date)}</td>
+    </tr>`).join('') || '<tr><td colspan="4" class="empty-state" style="padding:16px;text-align:center;color:var(--muted2)">No uploads yet</td></tr>';
+}
+
+// ═══════════════════════════════════
+// PARTS CATALOG
+// ═══════════════════════════════════
+function renderPartsCatalog(list) {
+  const catFilter = document.getElementById('parts-cat-filter')?.value || '';
+  const filtered = list.filter(p => !catFilter || p.cat === catFilter);
+  document.getElementById('parts-count-label').textContent = filtered.length + ' parts';
+  const tbody = document.getElementById('parts-tbody');
+  const empty = document.getElementById('parts-empty');
+  if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = filtered.map(p => `
+    <tr>
+      <td class="mono text-gold" style="font-size:11.5px">${p.no}</td>
+      <td style="max-width:220px">${p.desc}</td>
+      <td><span class="badge b-blue">${p.cat}</span></td>
+      <td class="mono">${fmtMoney(bestPrice(p))}</td>
+      <td class="td-sm">${p.vendors.map(v=>v.name).join(', ')}</td>
+      <td class="text-green">${p.margin}%</td>
+      <td class="td-sm">${p.hsn||'—'}</td>
+      <td class="td-sm">${p.updatedAt||'—'}</td>
+      <td>
+        <div class="flex gap1">
+          <button class="btn btn-ghost btn-xs text-gold" onclick="editPart('${p.id}')">Edit</button>
+          <button class="btn btn-ghost btn-xs text-red" onclick="deletePart('${p.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function filterPartsCatalog(val) {
+  const q = val.toLowerCase();
+  const catFilter = document.getElementById('parts-cat-filter').value;
+  const filtered = DB.parts.filter(p => (!q || p.no.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)) && (!catFilter || p.cat === catFilter));
+  renderPartsCatalog(filtered);
+}
+function openAddPartModal() {
+  editingPartId = null;
+  document.getElementById('part-catalog-modal-title').textContent = 'Add Part to Catalog';
+  ['pc-no','pc-desc','pc-hsn'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pc-margin').value = DB.settings.defaultMargin;
+  document.getElementById('pc-moq').value = 1;
+  document.getElementById('pc-vendor-rows').innerHTML = '';
+  addVendorPriceRow();
+  openModal('modal-add-part-catalog');
+}
+function editPart(id) {
+  editingPartId = id;
+  const p = DB.parts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('part-catalog-modal-title').textContent = 'Edit Part';
+  document.getElementById('pc-no').value = p.no;
+  document.getElementById('pc-desc').value = p.desc;
+  document.getElementById('pc-cat').value = p.cat;
+  document.getElementById('pc-margin').value = p.margin;
+  document.getElementById('pc-unit').value = p.unit || 'PCS';
+  document.getElementById('pc-hsn').value = p.hsn || '';
+  document.getElementById('pc-moq').value = p.moq || 1;
+  document.getElementById('pc-vendor-rows').innerHTML = '';
+  p.vendors.forEach(v => addVendorPriceRow(v));
+  openModal('modal-add-part-catalog');
+}
+let vendorRowCount = 0;
+function addVendorPriceRow(v = {}) {
+  const i = vendorRowCount++;
+  const div = document.createElement('div');
+  div.className = 'form-grid mb2';
+  div.id = 'vpr-' + i;
+  div.style.gridTemplateColumns = '1.5fr 1fr 80px 30px';
+  div.innerHTML = `
+    <input class="inp inp-sm" placeholder="Vendor name" value="${v.name||''}">
+    <input class="inp inp-sm" type="number" step="0.01" placeholder="Price (USD)" value="${v.price||''}">
+    <input class="inp inp-sm" type="number" placeholder="Lead days" value="${v.lead||7}">
+    <button class="btn btn-soft-red btn-icon-sm" onclick="this.closest('[id^=vpr]').remove()">✕</button>`;
+  document.getElementById('pc-vendor-rows').appendChild(div);
+}
+function savePartCatalog() {
+  const no = document.getElementById('pc-no').value.trim();
+  const desc = document.getElementById('pc-desc').value.trim();
+  if (!no || !desc) { toast('Part number aur description required', 'error'); return; }
+  const vendors = [...document.querySelectorAll('#pc-vendor-rows [id^=vpr]')].map(row => {
+    const inps = row.querySelectorAll('input');
+    return { name: inps[0].value.trim(), price: parseFloat(inps[1].value)||0, currency:'USD', lead: parseInt(inps[2].value)||7 };
+  }).filter(v => v.name && v.price > 0);
+  if (!vendors.length) { toast('Kam se kam ek vendor price daalo', 'error'); return; }
+  if (editingPartId) {
+    const p = DB.parts.find(x => x.id === editingPartId);
+    if (p) { Object.assign(p, { no, desc, cat: document.getElementById('pc-cat').value, margin: +document.getElementById('pc-margin').value, unit: document.getElementById('pc-unit').value, hsn: document.getElementById('pc-hsn').value, moq: +document.getElementById('pc-moq').value, vendors, updatedAt: new Date().toISOString().slice(0,10) }); }
+  } else {
+    if (DB.parts.find(p => p.no === no)) { toast('Part number pehle se exist karta hai', 'error'); return; }
+    DB.parts.push({ id: genId('P'), no, desc, cat: document.getElementById('pc-cat').value, margin: +document.getElementById('pc-margin').value, unit: document.getElementById('pc-unit').value, hsn: document.getElementById('pc-hsn').value, moq: +document.getElementById('pc-moq').value, active: true, vendors, priceHistory: [vendors[0].price], updatedAt: new Date().toISOString().slice(0,10) });
+  }
+  saveDB(); closeModal('modal-add-part-catalog'); renderPartsCatalog(DB.parts);
+  toast(editingPartId ? 'Part updated ✓' : 'Part added ✓');
+}
+function deletePart(id) {
+  confirm('Delete Part?', 'Yeh part catalog se remove ho jayega.', () => {
+    DB.parts = DB.parts.filter(p => p.id !== id);
+    saveDB(); renderPartsCatalog(DB.parts); toast('Part deleted', 'error');
+  }, '🗑');
+}
+
+// ═══════════════════════════════════
+// VENDORS
+// ═══════════════════════════════════
+function renderVendors() {
+  document.getElementById('vendors-tbody').innerHTML = DB.vendors.map(v => `
+    <tr>
+      <td><strong>${v.name}</strong></td>
+      <td class="td-sm">${v.location}</td>
+      <td>${vendorTypeBadge(v.type)}</td>
+      <td>${v.partsCount || 0}</td>
+      <td>${v.lead} days</td>
+      <td class="td-sm ${v.status==='active'?'text-green':v.status==='review'?'text-gold':'text-muted'}">${v.lastUpdate||'—'}</td>
+      <td>${v.status==='active'?'<span class="badge b-green">Active</span>':v.status==='review'?'<span class="badge b-gold">Review</span>':'<span class="badge b-gray">Pending</span>'}</td>
+      <td>
+        <div class="flex gap1">
+          <button class="btn btn-ghost btn-xs text-gold" onclick="editVendor('${v.id}')">Edit</button>
+          <button class="btn btn-ghost btn-xs text-red" onclick="deleteVendor('${v.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" class="empty-state" style="padding:24px;text-align:center">No vendors yet</td></tr>';
+}
+function openAddVendorModal() {
+  editingVendorId = null;
+  document.getElementById('vendor-modal-title').textContent = 'Add Vendor';
+  ['v-name','v-location','v-url','v-email'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('v-lead').value = 7;
+  openModal('modal-add-vendor');
+}
+function editVendor(id) {
+  editingVendorId = id;
+  const v = DB.vendors.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('vendor-modal-title').textContent = 'Edit Vendor';
+  document.getElementById('v-name').value = v.name;
+  document.getElementById('v-location').value = v.location;
+  document.getElementById('v-type').value = v.type;
+  document.getElementById('v-url').value = v.url || '';
+  document.getElementById('v-email').value = v.email || '';
+  document.getElementById('v-lead').value = v.lead;
+  openModal('modal-add-vendor');
+}
+function saveVendor() {
+  const name = document.getElementById('v-name').value.trim();
+  if (!name) { toast('Vendor naam required', 'error'); return; }
+  const data = { name, location: document.getElementById('v-location').value.trim(), type: document.getElementById('v-type').value, url: document.getElementById('v-url').value.trim(), email: document.getElementById('v-email').value.trim(), lead: +document.getElementById('v-lead').value||7, status:'active', lastUpdate: new Date().toISOString().slice(0,10) };
+  if (editingVendorId) {
+    const v = DB.vendors.find(x => x.id === editingVendorId);
+    if (v) Object.assign(v, data);
+  } else {
+    DB.vendors.push({ id: genId('V'), partsCount: 0, ...data });
+  }
+  saveDB(); closeModal('modal-add-vendor'); renderVendors();
+  toast(editingVendorId ? 'Vendor updated ✓' : 'Vendor added ✓');
+}
+function deleteVendor(id) {
+  confirm('Delete Vendor?', 'Is vendor ki sab prices bhi hati rahegi.', () => {
+    DB.vendors = DB.vendors.filter(v => v.id !== id);
+    saveDB(); renderVendors(); toast('Vendor deleted', 'error');
+  }, '🗑');
+}
+
+// ═══════════════════════════════════
+// CLIENTS
+// ═══════════════════════════════════
+function renderClients() {
+  document.getElementById('clients-tbody').innerHTML = DB.clients.map(c => `
+    <tr>
+      <td><strong>${c.company}</strong></td>
+      <td>${c.country}</td>
+      <td class="td-sm">${c.contact||'—'}</td>
+      <td>${c.totalOrders||0}</td>
+      <td class="mono text-green">${fmtMoney(c.totalValue||0)}</td>
+      <td>${c.discount||0}%</td>
+      <td class="td-sm">${c.terms||'—'}</td>
+      <td>
+        <div class="flex gap1">
+          <button class="btn btn-ghost btn-xs text-gold" onclick="editClient('${c.id}')">Edit</button>
+          <button class="btn btn-ghost btn-xs text-red" onclick="deleteClient('${c.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" class="empty-state" style="padding:24px;text-align:center">No clients yet</td></tr>';
+}
+function openAddClientModal() {
+  editingClientId = null;
+  document.getElementById('client-modal-title').textContent = 'Add Client';
+  ['cl-company','cl-contact','cl-email','cl-phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cl-disc').value = 0;
+  openModal('modal-add-client');
+}
+function editClient(id) {
+  editingClientId = id;
+  const c = DB.clients.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('client-modal-title').textContent = 'Edit Client';
+  document.getElementById('cl-company').value = c.company;
+  document.getElementById('cl-contact').value = c.contact || '';
+  document.getElementById('cl-email').value = c.email || '';
+  document.getElementById('cl-phone').value = c.phone || '';
+  document.getElementById('cl-curr-pref').value = c.currency || 'USD';
+  document.getElementById('cl-disc').value = c.discount || 0;
+  openModal('modal-add-client');
+}
+function saveClient() {
+  const company = document.getElementById('cl-company').value.trim();
+  if (!company) { toast('Company naam required', 'error'); return; }
+  const data = { company, country: document.getElementById('cl-country-sel').value, contact: document.getElementById('cl-contact').value.trim(), email: document.getElementById('cl-email').value.trim(), phone: document.getElementById('cl-phone').value.trim(), currency: document.getElementById('cl-curr-pref').value, discount: +document.getElementById('cl-disc').value||0, terms: document.getElementById('cl-terms').value };
+  if (editingClientId) {
+    const c = DB.clients.find(x => x.id === editingClientId);
+    if (c) Object.assign(c, data);
+  } else {
+    DB.clients.push({ id: genId('C'), totalOrders:0, totalValue:0, ...data });
+  }
+  saveDB(); closeModal('modal-add-client'); renderClients();
+  // Update quote dropdown if open
+  const sel = document.getElementById('q-client');
+  if (sel) sel.innerHTML = '<option value="">— Select Client —</option>' + DB.clients.map(c => `<option value="${c.id}">${c.company}</option>`).join('');
+  toast(editingClientId ? 'Client updated ✓' : 'Client added ✓');
+}
+function deleteClient(id) {
+  confirm('Delete Client?', 'Client delete ho jayega. Past quotes safe rahenge.', () => {
+    DB.clients = DB.clients.filter(c => c.id !== id);
+    saveDB(); renderClients(); toast('Client deleted', 'error');
+  }, '🗑');
+}
+
+// ═══════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════
+function loadSettings() {
+  const s = DB.settings;
+  const fields = { 's-company-name': s.companyName, 's-addr1': s.addr1, 's-addr2': s.addr2, 's-phone': s.phone, 's-email': s.email, 's-website': s.website, 's-gst': s.gst, 's-bank-name': s.bankName, 's-acc-holder': s.accHolder, 's-acc-no': s.accNo, 's-ifsc': s.ifsc, 's-swift': s.swift, 's-bank-addr': s.bankAddr, 's-currency': s.currency, 's-margin': s.defaultMargin, 's-validity': s.validity, 's-shipping': s.shipping, 's-payment-terms': s.paymentTerms, 's-alert-thresh': s.alertThreshold, 's-quote-prefix': s.quotePrefix };
+  Object.entries(fields).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+}
+function saveSettings() {
+  DB.settings = { ...DB.settings,
+    companyName: document.getElementById('s-company-name').value,
+    addr1: document.getElementById('s-addr1').value,
+    addr2: document.getElementById('s-addr2').value,
+    phone: document.getElementById('s-phone').value,
+    email: document.getElementById('s-email').value,
+    website: document.getElementById('s-website').value,
+    gst: document.getElementById('s-gst').value,
+    bankName: document.getElementById('s-bank-name').value,
+    accHolder: document.getElementById('s-acc-holder').value,
+    accNo: document.getElementById('s-acc-no').value,
+    ifsc: document.getElementById('s-ifsc').value,
+    swift: document.getElementById('s-swift').value,
+    bankAddr: document.getElementById('s-bank-addr').value,
+    currency: document.getElementById('s-currency').value,
+    defaultMargin: +document.getElementById('s-margin').value,
+    validity: +document.getElementById('s-validity').value,
+    shipping: +document.getElementById('s-shipping').value,
+    paymentTerms: document.getElementById('s-payment-terms').value,
+    alertThreshold: +document.getElementById('s-alert-thresh').value,
+    quotePrefix: document.getElementById('s-quote-prefix').value,
+  };
+  saveDB();
+  document.getElementById('user-disp-name').textContent = 'Admin';
+  document.getElementById('user-disp-company').textContent = DB.settings.companyName;
+  toast('✓ Settings saved!');
+}
+
+function switchTab(btn, panelId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ═══════════════════════════════════
+// DATA MANAGEMENT
+// ═══════════════════════════════════
+function exportAllData() {
+  const data = JSON.stringify(DB, null, 2);
+  downloadText(data, 'autoparts_backup_' + new Date().toISOString().slice(0,10) + '.json', 'application/json');
+  toast('✓ Data exported!');
+}
+function importAllData(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      DB = JSON.parse(e.target.result);
+      saveDB(); location.reload();
+    } catch { toast('Invalid file format', 'error'); }
+  };
+  reader.readAsText(file);
+}
+function clearAllData() {
+  confirm('Reset All Data?', 'Sab data delete ho jayega aur sample data se shuru hoga. Yeh action undo nahi hoga!', () => {
+    localStorage.removeItem(DB_KEY);
+    location.reload();
+  }, '🗑');
+}
+function downloadText(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════
+// GLOBAL SEARCH
+// ═══════════════════════════════════
+function globalSearch(val) {
+  if (!val || val.length < 2) return;
+  const q = val.toLowerCase();
+  const partMatch = DB.parts.find(p => p.no.toLowerCase().includes(q));
+  const quoteMatch = DB.quotations.find(x => x.no.toLowerCase().includes(q) || x.clientName.toLowerCase().includes(q));
+  const clientMatch = DB.clients.find(c => c.company.toLowerCase().includes(q));
+  if (partMatch) { showPage('parts'); document.getElementById('parts-search-inp').value = val; filterPartsCatalog(val); }
+  else if (quoteMatch) { showPage('quotes'); document.getElementById('q-search-inp').value = val; filterQuotes(val); }
+  else if (clientMatch) { showPage('clients'); }
+}
+
+// ═══════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeAllModals(); closeConfirm(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); showPage('new-quote'); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.querySelector('.search-global input').focus(); }
+});
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeAllModals(); });
+});
+
+// Nav click handler
+document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+  btn.addEventListener('click', () => showPage(btn.dataset.page));
+});
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+(function init() {
+  loadDB();
+  renderDashboard();
+  document.getElementById('user-disp-company').textContent = DB.settings.companyName;
+  // Update badge
+  const alertCount = DB.priceApprovals.length;
+  if (alertCount > 0) {
+    document.getElementById('nb-alerts').style.display = '';
+    document.getElementById('notif-dot').style.display = '';
+  }
+  console.log('🔧 AutoParts Pro loaded — ' + DB.parts.length + ' parts, ' + DB.vendors.length + ' vendors, ' + DB.quotations.length + ' quotes');
+})();
+
+</script>
+</body>
+</html>
