@@ -294,7 +294,27 @@ code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--s3);
             <div class="fg"><label>Client *</label><select class="inp" id="q-client" onchange="onClientChange()"><option value="">— Select Client —</option></select></div>
             <div class="fg"><label>Country</label><input class="inp" id="q-country" readonly></div>
             <div class="fg"><label>Email</label><input class="inp" id="q-email" type="email"></div>
-            <div class="fg"><label>Currency</label><select class="inp" id="q-currency"><option>USD</option><option>AED</option><option>EUR</option><option>SAR</option><option>INR</option></select></div>
+            <div class="fg"><label>Currency</label><select class="inp" id="q-currency" onchange="onCurrencyChange()">
+  <option value="USD">🇺🇸 USD — US Dollar</option>
+  <option value="AED">🇦🇪 AED — UAE Dirham</option>
+  <option value="EUR">🇪🇺 EUR — Euro</option>
+  <option value="SAR">🇸🇦 SAR — Saudi Riyal</option>
+  <option value="GBP">🇬🇧 GBP — British Pound</option>
+  <option value="KES">🇰🇪 KES — Kenyan Shilling</option>
+  <option value="NGN">🇳🇬 NGN — Nigerian Naira</option>
+  <option value="ZAR">🇿🇦 ZAR — South African Rand</option>
+  <option value="BDT">🇧🇩 BDT — Bangladeshi Taka</option>
+  <option value="PKR">🇵🇰 PKR — Pakistani Rupee</option>
+  <option value="MYR">🇲🇾 MYR — Malaysian Ringgit</option>
+  <option value="IDR">🇮🇩 IDR — Indonesian Rupiah</option>
+  <option value="TZS">🇹🇿 TZS — Tanzanian Shilling</option>
+  <option value="OMR">🇴🇲 OMR — Omani Rial</option>
+  <option value="QAR">🇶🇦 QAR — Qatari Riyal</option>
+  <option value="KWD">🇰🇼 KWD — Kuwaiti Dinar</option>
+  <option value="BHD">🇧🇭 BHD — Bahraini Dinar</option>
+  <option value="INR">🇮🇳 INR — Indian Rupee</option>
+</select>
+<div id="fx-rate-display" style="font-size:10.5px;color:var(--muted2);margin-top:4px;font-family:'JetBrains Mono',monospace"></div></div>
             <div class="fg"><label>Payment Terms</label><select class="inp" id="q-terms"><option>50% Advance, 50% Before Shipment</option><option>100% Advance</option><option>Letter of Credit (LC)</option><option>Net 30 Days</option></select></div>
             <div class="fg"><label>Validity (Days)</label><input class="inp" type="number" id="q-validity" value="30"></div>
             <div class="fg fg-full"><label>Remarks</label><textarea class="inp" id="q-remarks" rows="2" placeholder="Special instructions..."></textarea></div>
@@ -310,7 +330,7 @@ code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--s3);
           </div>
         </div>
         <div style="padding:12px 16px">
-          <div class="qb-header"><span>Part / Description</span><span>Qty</span><span>Unit Price</span><span>Margin%</span><span>Disc%</span><span>Line Total</span><span></span></div>
+          <div class="qb-header"><span>Part / Description</span><span>Qty</span><span>Cost (₹INR)</span><span>Margin%</span><span>Sell Price</span><span>Line Total</span><span></span></div>
           <div id="qb-rows"></div>
           <button class="btn btn-ghost btn-sm mt2 text-gold" onclick="addEmptyRow()">+ Empty Row</button>
           <div class="totals-box">
@@ -525,9 +545,12 @@ code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--s3);
           <div class="fg"><label>Margin %</label><input class="inp" type="number" id="m-margin" value="20" oninput="calcModalTotal()"></div>
           <div class="fg"><label>Discount %</label><input class="inp" type="number" id="m-disc" value="0" oninput="calcModalTotal()"></div>
         </div>
-        <div style="background:var(--s2);border-radius:8px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
-          <span class="text-muted">Line Total</span>
-          <span id="modal-total" class="mono" style="font-size:20px;font-weight:700;color:var(--gold)">₹0</span>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;margin-top:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="text-muted">Line Total</span>
+            <span id="modal-total" class="mono" style="font-size:20px;font-weight:700;color:var(--gold)">0</span>
+          </div>
+          <div id="modal-hint" style="font-size:10px;color:var(--green3);font-family:'JetBrains Mono',monospace;margin-top:5px;line-height:1.5"></div>
         </div>
       </div>
     </div>
@@ -657,7 +680,23 @@ code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--s3);
         <div class="fg"><label>Contact</label><input class="inp" id="cl-contact"></div>
         <div class="fg"><label>Email</label><input class="inp" id="cl-email" type="email"></div>
         <div class="fg"><label>Phone</label><input class="inp" id="cl-phone"></div>
-        <div class="fg"><label>Currency</label><select class="inp" id="cl-currency"><option>USD</option><option>AED</option><option>EUR</option><option>SAR</option></select></div>
+        <div class="fg"><label>Currency</label><select class="inp" id="cl-currency">
+  <option value="USD">USD — US Dollar</option>
+  <option value="AED">AED — UAE Dirham</option>
+  <option value="EUR">EUR — Euro</option>
+  <option value="SAR">SAR — Saudi Riyal</option>
+  <option value="GBP">GBP — British Pound</option>
+  <option value="KES">KES — Kenyan Shilling</option>
+  <option value="NGN">NGN — Nigerian Naira</option>
+  <option value="ZAR">ZAR — South African Rand</option>
+  <option value="BDT">BDT — Bangladeshi Taka</option>
+  <option value="PKR">PKR — Pakistani Rupee</option>
+  <option value="MYR">MYR — Malaysian Ringgit</option>
+  <option value="OMR">OMR — Omani Rial</option>
+  <option value="QAR">QAR — Qatari Riyal</option>
+  <option value="KWD">KWD — Kuwaiti Dinar</option>
+  <option value="INR">INR — Indian Rupee</option>
+</select></div>
         <div class="fg"><label>Discount %</label><input class="inp" type="number" id="cl-disc" value="0"></div>
         <div class="fg"><label>Payment Terms</label><select class="inp" id="cl-terms"><option>50% Advance, 50% Before Shipment</option><option>100% Advance</option><option>Letter of Credit (LC)</option><option>Net 30 Days</option></select></div>
       </div>
@@ -764,16 +803,115 @@ let appSettings = {
   addr: 'New Delhi, India', phone: '', email: '',
   gst: '', website: '', bank: '', accno: '', ifsc: '',
   swift: '', accholder: '', currency: 'INR', margin: 20,
-  validity: 30, shipping: 0, prefix: 'Q-2026-'
+  validity: 30, shipping: 0, prefix: 'Q-2026-',
+  marginMethod: 'margin'  // 'margin'=true margin, 'markup'=cost+(m%)
 };
+
+// ── Currency Rates Cache ──
+let fxRates = { INR: 1 }; // base INR, updated from API
+let fxLastFetch = 0;
+const FX_CACHE_MS = 4 * 60 * 60 * 1000; // refresh every 4 hours
+
+// Supported currencies with symbols and names
+const CURRENCIES = {
+  INR: { sym: '₹',    name: 'Indian Rupee' },
+  USD: { sym: '$',    name: 'US Dollar' },
+  AED: { sym: 'AED ', name: 'UAE Dirham' },
+  EUR: { sym: '€',    name: 'Euro' },
+  SAR: { sym: 'SAR ', name: 'Saudi Riyal' },
+  GBP: { sym: '£',    name: 'British Pound' },
+  KES: { sym: 'KES ', name: 'Kenyan Shilling' },
+  NGN: { sym: '₦',    name: 'Nigerian Naira' },
+  ZAR: { sym: 'R ',   name: 'South African Rand' },
+  BDT: { sym: '৳',    name: 'Bangladeshi Taka' },
+  PKR: { sym: '₨',    name: 'Pakistani Rupee' },
+  MYR: { sym: 'RM ',  name: 'Malaysian Ringgit' },
+  IDR: { sym: 'Rp ',  name: 'Indonesian Rupiah' },
+  TZS: { sym: 'TZS ', name: 'Tanzanian Shilling' },
+  OMR: { sym: 'OMR ', name: 'Omani Rial' },
+  QAR: { sym: 'QAR ', name: 'Qatari Riyal' },
+  KWD: { sym: 'KWD ', name: 'Kuwaiti Dinar' },
+  BHD: { sym: 'BHD ', name: 'Bahraini Dinar' },
+};
+
+async function fetchFxRates() {
+  const now = Date.now();
+  if (now - fxLastFetch < FX_CACHE_MS && Object.keys(fxRates).length > 1) return;
+  try {
+    // Free API — no key needed, INR base
+    const res = await fetch('https://api.frankfurter.app/latest?from=INR&to=USD,AED,EUR,SAR,GBP,KES,NGN,ZAR,BDT,PKR,MYR,IDR,TZS,OMR,QAR,KWD,BHD');
+    if (!res.ok) throw new Error('Rate fetch failed');
+    const data = await res.json();
+    fxRates = { INR: 1, ...data.rates };
+    fxLastFetch = now;
+    console.log('FX rates updated:', new Date().toLocaleTimeString(), fxRates);
+    // Update rate display if on new-quote page
+    updateRateDisplay();
+  } catch(e) {
+    console.warn('FX fetch failed, using fallback rates:', e.message);
+    // Fallback static rates (approximate)
+    fxRates = {
+      INR: 1, USD: 0.012, AED: 0.044, EUR: 0.011,
+      SAR: 0.045, GBP: 0.0094, KES: 1.55, NGN: 19.2,
+      ZAR: 0.22, BDT: 1.31, PKR: 3.35, MYR: 0.056,
+      IDR: 194, TZS: 30.8, OMR: 0.0046, QAR: 0.044,
+      KWD: 0.0037, BHD: 0.0045
+    };
+    updateRateDisplay();
+  }
+}
+
+function convertFromINR(inrAmount, toCurrency) {
+  const rate = fxRates[toCurrency] || 1;
+  return inrAmount * rate;
+}
+
+function convertToINR(amount, fromCurrency) {
+  const rate = fxRates[fromCurrency] || 1;
+  return amount / rate;
+}
+
+function fmtCurrency(curr) {
+  return CURRENCIES[curr]?.sym || (curr + ' ');
+}
+
+function updateRateDisplay() {
+  const el = document.getElementById('fx-rate-display');
+  if (!el) return;
+  const curr = document.getElementById('q-currency')?.value || 'USD';
+  if (curr === 'INR') {
+    el.textContent = '';
+    return;
+  }
+  const rate = fxRates[curr];
+  if (rate) {
+    el.innerHTML = `<span style="color:var(--green3)">●</span> Live Rate: ₹1 = ${fmtCurrency(curr)}${rate.toFixed(4)} &nbsp;|&nbsp; ${fmtCurrency(curr)}1 = ₹${(1/rate).toFixed(2)}`;
+  }
+}
 let quoteCounter = 1;
 
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
-function fmtMoney(n, curr = '') {
-  const sym = curr === 'USD' ? '$' : curr === 'AED' ? 'AED ' : curr === 'EUR' ? '€' : '₹';
-  return sym + Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function fmtMoney(n, curr = 'INR') {
+  const sym = CURRENCIES[curr]?.sym || (curr ? curr + ' ' : '₹');
+  // For large currencies like IDR, no decimals
+  const decimals = ['IDR','NGN','KES','TZS','PKR','BDT'].includes(curr) ? 0 : 2;
+  return sym + Number(n || 0).toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Margin calculation — true margin or markup
+function getSellPrice(costINR, marginPct) {
+  const method = appSettings.marginMethod || 'margin';
+  if (method === 'markup') return costINR * (1 + marginPct / 100);
+  if (marginPct >= 100) return costINR * 100;
+  return costINR / (1 - marginPct / 100); // true margin
+}
+
+// Get sell price in target currency
+function getSellPriceConverted(costINR, marginPct, toCurrency) {
+  const sellINR = getSellPrice(costINR, marginPct);
+  return convertFromINR(sellINR, toCurrency || 'INR');
 }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'; }
 function genId(p) { return p + Date.now().toString(36).toUpperCase(); }
@@ -781,8 +919,10 @@ function statusBadge(s) {
   const m = { Draft: 'b-gray', Sent: 'b-blue', Won: 'b-green', Lost: 'b-red' };
   return `<span class="badge ${m[s] || 'b-gray'}">${s}</span>`;
 }
-function calcLineTotal(item) {
-  return item.price * (1 + item.margin / 100) * (1 - item.disc / 100) * item.qty;
+function calcLineTotal(item, currency) {
+  const curr = currency || document.getElementById('q-currency')?.value || 'INR';
+  const sellConverted = getSellPriceConverted(item.price, item.margin, curr);
+  return sellConverted * (1 - (item.disc || 0) / 100) * item.qty;
 }
 function calcQuoteSub(items) { return (items || []).reduce((s, i) => s + calcLineTotal(i), 0); }
 function calcQuoteGrand(q) {
@@ -1065,6 +1205,12 @@ function onClientChange() {
   document.getElementById('q-country').value = c.country || '';
   document.getElementById('q-email').value = c.email || '';
   document.getElementById('q-currency').value = c.currency || 'USD';
+  onCurrencyChange();
+}
+
+function onCurrencyChange() {
+  updateRateDisplay();
+  renderQBRows(); // re-render with new currency
 }
 
 function renderQBRows() {
@@ -1073,37 +1219,59 @@ function renderQBRows() {
     container.innerHTML = `<div class="empty-state" style="padding:24px"><div class="es-icon" style="font-size:24px">📦</div><p>"+ Add Part" click karo</p></div>`;
     recalcTotals(); return;
   }
-  container.innerHTML = currentQuoteItems.map((item, i) => `
+  const curr = document.getElementById('q-currency')?.value || 'INR';
+  container.innerHTML = currentQuoteItems.map((item, i) => {
+    const sellINR   = getSellPrice(item.price, item.margin);
+    const sellConv  = convertFromINR(sellINR, curr);
+    const lineTotal = sellConv * (1 - (item.disc||0)/100) * item.qty;
+    const inrHint   = curr !== 'INR' ? `<div style="font-size:9px;color:var(--muted)">Cost: ₹${item.price.toFixed(2)} → Sell: ₹${sellINR.toFixed(2)}</div>` : '';
+    return `
     <div class="qb-row">
       <div>
         <div class="mono text-gold" style="font-size:11px">${item.no}</div>
         <div style="font-size:11px;color:var(--muted2)">${item.desc}</div>
+        ${inrHint}
       </div>
       <input class="inp inp-sm" type="number" value="${item.qty}" min="1" onchange="currentQuoteItems[${i}].qty=+this.value||1;recalcTotals();updateLineTotal(${i})">
-      <input class="inp inp-sm" type="number" value="${item.price}" step="0.01" onchange="currentQuoteItems[${i}].price=+this.value||0;recalcTotals();updateLineTotal(${i})">
+      <input class="inp inp-sm mono" type="number" value="${item.price}" step="0.01" title="Vendor cost in INR" onchange="currentQuoteItems[${i}].price=+this.value||0;recalcTotals();updateLineTotal(${i})">
       <input class="inp inp-sm" type="number" value="${item.margin}" onchange="currentQuoteItems[${i}].margin=+this.value||0;recalcTotals();updateLineTotal(${i})">
-      <input class="inp inp-sm" type="number" value="${item.disc}" onchange="currentQuoteItems[${i}].disc=+this.value||0;recalcTotals();updateLineTotal(${i})">
-      <span class="mono text-gold" style="font-size:12px;font-weight:700" id="lt-${i}">${fmtMoney(calcLineTotal(item))}</span>
+      <span class="mono" style="font-size:11.5px;color:var(--green3);font-weight:600" id="sp-${i}">${fmtMoney(sellConv, curr)}</span>
+      <span class="mono text-gold" style="font-size:12px;font-weight:700" id="lt-${i}">${fmtMoney(lineTotal, curr)}</span>
       <button class="del-btn" onclick="currentQuoteItems.splice(${i},1);renderQBRows()">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   recalcTotals();
 }
 
 function updateLineTotal(i) {
-  const el = document.getElementById('lt-' + i);
-  if (el) el.textContent = fmtMoney(calcLineTotal(currentQuoteItems[i]));
+  const curr = document.getElementById('q-currency')?.value || 'INR';
+  const item = currentQuoteItems[i];
+  const sellINR  = getSellPrice(item.price, item.margin);
+  const sellConv = convertFromINR(sellINR, curr);
+  const lt = sellConv * (1-(item.disc||0)/100) * item.qty;
+  const spEl = document.getElementById('sp-' + i);
+  const ltEl = document.getElementById('lt-' + i);
+  if (spEl) spEl.textContent = fmtMoney(sellConv, curr);
+  if (ltEl) ltEl.textContent = fmtMoney(lt, curr);
 }
 
 function recalcTotals() {
-  const sub = calcQuoteSub(currentQuoteItems);
-  const od = +(document.getElementById('t-disc')?.value || 0);
-  const ship = +(appSettings.shipping || 0);
+  const curr = document.getElementById('q-currency')?.value || 'INR';
+  // Sum all line totals in target currency
+  const sub = currentQuoteItems.reduce((s, item) => {
+    const sellConv = convertFromINR(getSellPrice(item.price, item.margin), curr);
+    return s + sellConv * (1-(item.disc||0)/100) * item.qty;
+  }, 0);
+  const od   = +(document.getElementById('t-disc')?.value || 0);
+  const shipINR  = +(appSettings.shipping || 0);
+  const shipConv = convertFromINR(shipINR, curr);
   const after = sub * (1 - od / 100);
-  const grand = after + ship;
-  document.getElementById('t-sub').textContent = fmtMoney(sub);
-  document.getElementById('t-after').textContent = fmtMoney(after);
-  document.getElementById('t-ship').textContent = fmtMoney(ship);
-  document.getElementById('t-grand').textContent = fmtMoney(grand);
+  const grand = after + shipConv;
+  document.getElementById('t-sub').textContent  = fmtMoney(sub, curr);
+  document.getElementById('t-after').textContent = fmtMoney(after, curr);
+  document.getElementById('t-ship').textContent  = fmtMoney(shipConv, curr);
+  document.getElementById('t-grand').textContent = fmtMoney(grand, curr);
+  updateRateDisplay();
 }
 
 function addEmptyRow() {
@@ -1207,10 +1375,21 @@ function pickVendor(el, price) {
 
 function calcModalTotal() {
   if (!selectedVendorPrice) return;
-  const qty = +(document.getElementById('m-qty').value) || 1;
+  const qty    = +(document.getElementById('m-qty').value)    || 1;
   const margin = +(document.getElementById('m-margin').value) || 0;
-  const disc = +(document.getElementById('m-disc').value) || 0;
-  document.getElementById('modal-total').textContent = fmtMoney(selectedVendorPrice * (1 + margin / 100) * (1 - disc / 100) * qty);
+  const disc   = +(document.getElementById('m-disc').value)   || 0;
+  const curr   = document.getElementById('q-currency')?.value || 'INR';
+  const sellINR  = getSellPrice(selectedVendorPrice, margin);
+  const sellConv = convertFromINR(sellINR, curr);
+  const total    = sellConv * (1 - disc/100) * qty;
+  document.getElementById('modal-total').textContent = fmtMoney(total, curr);
+  // Show breakdown hint
+  const hint = document.getElementById('modal-hint');
+  if (hint) {
+    const actualMargin = ((sellINR - selectedVendorPrice)/sellINR*100).toFixed(1);
+    const rateInfo = curr !== 'INR' ? ` | Rate: ₹1 = ${fmtCurrency(curr)}${(fxRates[curr]||1).toFixed(4)}` : '';
+    hint.innerHTML = `Cost: ₹${selectedVendorPrice.toFixed(2)} → Sell INR: ₹${sellINR.toFixed(2)} → ${curr}: ${fmtMoney(sellConv,curr)} | Margin: ${actualMargin}%${rateInfo}`;
+  }
 }
 
 function confirmAddPart() {
@@ -1525,7 +1704,9 @@ function exportQuoteExcel(quoteData) {
   // Items
   let subtotal = 0;
   items.forEach((item, i) => {
-    const sellPrice = item.price * (1 + item.margin/100) * (1 - (item.disc||0)/100);
+    const xlCurr = q.currency || 'INR';
+    const sellConv  = convertFromINR(getSellPrice(item.price, item.margin), xlCurr);
+    const sellPrice = sellConv * (1 - (item.disc||0)/100);
     const lineTotal = sellPrice * item.qty;
     subtotal += lineTotal;
     wsData.push([
@@ -1594,14 +1775,19 @@ function renderPDFDoc(q) {
   const s = appSettings;
   const items = q.items || [];
   let sub = 0;
+  const qCurr = q.currency || 'INR';
   const rows = items.map((item, i) => {
-    const sell = item.price * (1 + item.margin / 100);
-    const total = sell * (1 - item.disc / 100) * item.qty;
+    const sellINR  = getSellPrice(item.price, item.margin);
+    const sellConv = convertFromINR(sellINR, qCurr);
+    const total    = sellConv * (1-(item.disc||0)/100) * item.qty;
     sub += total;
-    return `<tr><td>${i + 1}</td><td style="font-family:monospace;color:#b45309;font-size:10px">${item.no}</td><td>${item.desc}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${fmtMoney(item.price)}</td><td style="text-align:right">${item.margin}%</td><td style="text-align:right;font-weight:700">${fmtMoney(total)}</td></tr>`;
+    const costDisp = qCurr !== 'INR'
+      ? `<div style="font-size:8px;color:#888">Cost: ₹${item.price.toFixed(2)}</div>${fmtMoney(sellConv, qCurr)}`
+      : fmtMoney(sellConv, qCurr);
+    return `<tr><td>${i+1}</td><td style="font-family:monospace;color:#b45309;font-size:10px">${item.no}</td><td>${item.desc}</td><td style="text-align:center">${item.qty}</td><td style="text-align:right">${costDisp}</td><td style="text-align:right">${item.margin}%</td><td style="text-align:right;font-weight:700">${fmtMoney(total,qCurr)}</td></tr>`;
   }).join('');
   const afterDisc = sub * (1 - (q.overall_disc || 0) / 100);
-  const grand = afterDisc + (q.shipping || 0);
+  const grand = afterDisc + convertFromINR(q.shipping || 0, qCurr);
   document.getElementById('pdf-zone').innerHTML = `
     <div id="pdf-print" style="background:#fff;color:#111;padding:32px 36px;font-family:sans-serif;font-size:12px;line-height:1.5;border-radius:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -1618,11 +1804,12 @@ function renderPDFDoc(q) {
         <tbody>${rows}</tbody>
       </table>
       <div style="display:flex;justify-content:flex-end;margin-top:14px">
-        <div style="width:240px">
-          <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Subtotal:</span><strong>${fmtMoney(sub)}</strong></div>
-          ${q.overall_disc ? `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Discount (${q.overall_disc}%):</span><span>-${fmtMoney(sub*(q.overall_disc/100))}</span></div>` : ''}
-          ${q.shipping ? `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Shipping:</span><span>${fmtMoney(q.shipping)}</span></div>` : ''}
-          <div style="border-top:2px solid #f59e0b;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between"><span style="font-weight:800">GRAND TOTAL (${q.currency || 'INR'}):</span><span style="font-size:20px;font-weight:800;color:#f59e0b">${fmtMoney(grand)}</span></div>
+        <div style="width:280px">
+          ${qCurr !== 'INR' ? `<div style="font-size:9px;color:#888;margin-bottom:6px;padding:4px 8px;background:#f9fafb;border-radius:4px">Exchange Rate: ₹1 = ${fmtCurrency(qCurr)}${(fxRates[qCurr]||1).toFixed(4)} &nbsp;|&nbsp; ${fmtCurrency(qCurr)}1 = ₹${(1/(fxRates[qCurr]||1)).toFixed(2)}</div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Subtotal:</span><strong>${fmtMoney(sub, qCurr)}</strong></div>
+          ${q.overall_disc ? `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Discount (${q.overall_disc}%):</span><span>-${fmtMoney(sub*(q.overall_disc/100), qCurr)}</span></div>` : ''}
+          ${q.shipping ? `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Shipping:</span><span>${fmtMoney(convertFromINR(q.shipping, qCurr), qCurr)}</span></div>` : ''}
+          <div style="border-top:2px solid #f59e0b;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between"><span style="font-weight:800">GRAND TOTAL (${qCurr}):</span><span style="font-size:20px;font-weight:800;color:#f59e0b">${fmtMoney(grand, qCurr)}</span></div>
         </div>
       </div>
       <div style="margin-top:16px;padding-top:10px;border-top:1px solid #eee;font-size:10px;color:#999;line-height:1.6">
@@ -2189,7 +2376,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(b => b.addEventListene
 (async function init() {
   const ok = await checkConnection();
   if (ok) {
-    await loadAllData();
+    await Promise.all([loadAllData(), fetchFxRates()]);
     renderDashboard();
     toast('✓ Database connected!');
   } else {
